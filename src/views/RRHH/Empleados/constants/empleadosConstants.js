@@ -64,5 +64,4 @@ export const FORM_INICIAL_EMPLEADO = {
   habilidades: [],
   documentos: [],
   cuadrillaId: null,
-  cuadrillaId: null,
 }
