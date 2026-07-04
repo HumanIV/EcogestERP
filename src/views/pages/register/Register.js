@@ -16,7 +16,7 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
-import logoPersonalizado from '../../../assets/images/Minect.JPG'
+import logoPersonalizado from '../../../assets/images/Minect.jpg'
 import logoUnefa from '../../../assets/images/unefa.png'
 import { useAuth } from '../../../context/AuthContext'
 
