@@ -1,0 +1,247 @@
+================================================================================
+ANÁLISIS ESTÉTICO Y VISUAL DEL FRONTEND - SOLARCTEC v1.1
+================================================================================
+Fecha: 2026-05-05
+Proyecto: Solarctec - Sistema de Gestión Ambiental (MINEC Venezuela)
+Tipo: Análisis Exclusivamente Visual/UX - SIN CÓDIGO
+Analista: opencode AI
+
+================================================================================
+CATEGORÍAS DE ANÁLISIS VISUAL:
+================================================================================
+A = Interfaz (colores, spacing, tipografía, temas)
+B = Componentes (cards, botones, formularios, tablas, modales)
+C = Layout (alineación, responsive, grids, distribución)
+D = Accesibilidad Visual (contraste, iconografía, jerarquía, mensajes)
+
+Prioridad Visual: ALTA | MEDIA | BAJA
+
+================================================================================
+RESUMEN EJECUTIVO VISUAL:
+================================================================================
+El sistema presenta una base sólida con temática ecológica (verde/eco), pero
+requiere mejoras significativas en consistencia visual, responsive design y
+accesibilidad. Los errores de código traducidos a problemas visuales son:
+- 12 errores de Interfaz (A)
+- Componentes con estilos inconsistentes
+- Problemas de Layout en móviles
+- Accesibilidad mejorable
+
+================================================================================
+ÁREA: HEADER Y NAVEGACIÓN PRINCIPAL
+================================================================================
+| Área Afectada     | Cat | Problema Visual                                  | Recomendación de Diseño                              | Prioridad |
+|-------------------|-----|-------------------------------------------------|------------------------------------------------------|-----------|
+| AppHeader.js      | A   | Estilos inline mezclados con CSS               | Unificar en archivo SCSS dedicado                   | MEDIA     |
+| AppHeader.js      | C   | Botones de tema (dark/light) descentrados       | Centrar dropdown, mantener consistencia vertical     | BAJA      |
+| AppHeader.js      | D   | Icono de tema pequeño en móviles                | Aumentar área clickeable, mínimo 44x44px           | MEDIA     |
+| AppSidebar.js     | B   | Backdrop oscuro bloquea contenido               | Reducir opacidad a 0.3, añadir animación fade      | MEDIA     |
+| AppSidebar.js     | C   | Logo no se adapta al estado collapsed           | Diseño responsive para logo en sidebar contraído    | MEDIA     |
+| AppSidebar.js     | D   | Texto "ECOGEST" ilegible en modo contraído      | Icono alternativo o tooltip en hover                 | BAJA      |
+
+================================================================================
+ÁREA: PÁGINA DE LOGIN Y AUTENTICACIÓN
+================================================================================
+| Área Afectada     | Cat | Problema Visual                                  | Recomendación de Diseño                              | Prioridad |
+|-------------------|-----|-------------------------------------------------|------------------------------------------------------|-----------|
+| Login.js          | A   | Logos de diferentes tamaños visualmente        | Equalizar dimensiones, usar mismo contenedor        | MEDIA     |
+| Login.js          | B   | Botón "Login" sin feedback visual              | Añadir hover state y loading spinner                | ALTA      |
+| Login.js          | C   | Formulario no responsivo en móviles            | Ajustar ancho máximo en media queries               | ALTA      |
+| Login.js          | D   | Falta icono visual de "olvidé contraseña"      | Añadir link con icono debajo del formulario         | BAJA      |
+| Login.js          | B   | Input de contraseña sin icono de visibilidad   | Añadir toggle show/hide password                   | MEDIA     |
+
+================================================================================
+ÁREA: MÓDULO DE PERMISOS (USUARIOS)
+================================================================================
+| Área Afectada     | Cat | Problema Visual                                  | Recomendación de Diseño                              | Prioridad |
+|-------------------|-----|-------------------------------------------------|------------------------------------------------------|-----------|
+| permisos.js       | A   | KPIs con valores null muestran "0"             | Usar skeleton loader o indicador "sin datos"        | ALTA      |
+| permisos.js       | B   | Botones de filtro activos sin distinción clara | Aumentar contraste, añadir indicador visual active  | MEDIA     |
+| permisos.js       | B   | Tabla sin estados vacíos amigables             | Diseño especial para "sin permisos"                 | ALTA      |
+| permisos.js       | C   | Tarjetas KPI no se apilan en mobile            | Grid responsivo: 2x2 en móvil, 4x1 en desktop      | MEDIA     |
+| permisos.js       | A   | Colores de badges inconsistentes con tema      | Estandarizar paleta de estados según guía eco       | MEDIA     |
+| permisosForm.js   | A   | Formulario enorm (1063 líneas)                 | Dividir en pasos/wizard con progress indicator      | ALTA      |
+| permisosForm.js   | B   | Campos sin labels claros o help text            | Añadir tooltips y placeholders descriptivos         | ALTA      |
+| permisosForm.js   | D   | Validaciones visuales rojas aggressivas        | Usar colores suaves, errores inline sutiles         | MEDIA     |
+| permisosForm.js   | C   | Campos muy juntos sin suficiente spacing       | Aumentar gap entre campos, mejor organización      | MEDIA     |
+| permisosTabla.js  | B   | Tabla muy compacta, difícil de leer            | Añadir padding rows, alternar colores               | MEDIA     |
+
+================================================================================
+ÁREA: MÓDULO DE LICENCIAS (USUARIOS)
+================================================================================
+| Área Afectada     | Cat | Problema Visual                                  | Recomendación de Diseño                              | Prioridad |
+|-------------------|-----|-------------------------------------------------|------------------------------------------------------|-----------|
+| licencia.js      | A   | Stats muestran undefined/error visual          | Validar datos antes de renderizar KPIs              | ALTA      |
+| licencia.js      | B   | Filtros de tabs desproporcionados              | Consistency con permisos, igualar tamaño botones    | MEDIA     |
+| licencia.js      | B   | Estado vacío sin illustación                   | Añadir ilustración eco-friendly + mensaje claro      | ALTA      |
+| licencia.js      | C   | Cards no tienen sombra consistente             | Estandarizar sombras según sistema de diseño        | BAJA      |
+| licencia.js      | A   | Footer de tarjeta con información redundant    | Simplificar, solo ícono + texto breve              | BAJA      |
+| licenciasForm    | B   | Formularios muy largos sin organización        | Estructura en secciones colapsables                 | ALTA      |
+| licenciasTabla   | B   | Tabla de licencias sin filtros visuales        | Añadir header de filtros sticky                     | MEDIA     |
+
+================================================================================
+ÁREA: PERFIL DE USUARIO
+================================================================================
+| Área Afectada     | Cat | Problema Visual                                  | Recomendación de Diseño                              | Prioridad |
+|-------------------|-----|-------------------------------------------------|------------------------------------------------------|-----------|
+| perfilUsers.js   | A   | Avatar con borde inconsistente                  | Usar border-radius cohérente con tema               | BAJA      |
+| perfilUsers.js   | B   | Modal de contraseña mal centrado                | Centrar modal, mantener proporciones                | MEDIA     |
+| perfilUsers.js   | C   | Formulario de edición muy extenso              | Organizar en tabs o accordion                       | MEDIA     |
+| perfilUsers.js   | D   | Modal no cierra al hacer click fuera           | Añadir backdrop clickeable, cerrar automático       | ALTA      |
+| perfilUsers.js   | A   | Gradientes en iconos no cohesivos             | Unificar paleta de gradientes                      | BAJA      |
+| perfilUsers.js   | B   | Botones de acción sin separación clara         | Aumentar spacing entre acciones                    | BAJA      |
+
+================================================================================
+ÁREA: GESTIÓN ADMINISTRATIVA - INVENTARIO
+================================================================================
+| Área Afectada     | Cat | Problema Visual                                  | Recomendación de Diseño                              | Prioridad |
+|-------------------|-----|-------------------------------------------------|------------------------------------------------------|-----------|
+| Inventario.js    | A   | Uso excesivo de estilos inline (anti-patrón)   | Migrar todo a clases CSS/SCSS                        | ALTA      |
+| Inventario.js    | B   | Alertas visuales muy agresivas                 | Suavizar colores, mejor jerarquía visual           | MEDIA     |
+| Inventario.js    | C   | Tabs de navegación muy pequenos                | Aumentar tamaño clickeable, mejor spacing           | MEDIA     |
+| Inventario.js    | B   | Tabla de activos muy wide, overflow horizontal | Implementar sticky columns, scroll horizontal       | ALTA      |
+| Inventario.js    | A   | Colores de badges no siguen el tema eco        | Estandarizar: éxito=verde eco, warning=ámbar        | MEDIA     |
+| Inventario.js    | D   | Iconos de acciones muy pequeños                | Aumentar tamaño, añadir hover state claro           | MEDIA     |
+| Inventario.js    | B   | Modales muy largos sin scroll                  | Añadir scroll interno, header fixed                 | ALTA      |
+
+================================================================================
+ÁREA: GESTIÓN ADMINISTRATIVA - PLANIFICACIÓN
+================================================================================
+| Área Afectada     | Cat | Problema Visual                                  | Recomendación de Diseño                              | Prioridad |
+|-------------------|-----|-------------------------------------------------|------------------------------------------------------|-----------|
+| Planificacion.js  | A   | Módulo enorme (2369 líneas) - caos visual      | Dividir en sub-vistas con tabs claros               | ALTA      |
+| Planificacion.js  | C   | Gráficos overwhelmeantes por cantidad          | Priorizar dashboard con KPIs principales            | ALTA      |
+| Planificacion.js  | B   | Formularios de ajustes muy complejos           | Simplificar, usar step-by-step form                | MEDIA     |
+| Planificacion.js  | A   | Colores de balances (rojo/verde) no claros    | Leyenda visual clara, evitar confusión             | MEDIA     |
+| Planificacion.js  | D   | Números muy pequeños en tablas                 | Aumentar font-size, usar font-weight para totales  | MEDIA     |
+
+================================================================================
+ÁREA: GESTIÓN ADMINISTRATIVA - ADMINISTRACIÓN FINANCIERA
+================================================================================
+| Área Afectada     | Cat | Problema Visual                                  | Recomendación de Diseño                              | Prioridad |
+|-------------------|-----|-------------------------------------------------|------------------------------------------------------|-----------|
+| AdminFinanciera   | B   | Demasiados datos en una vista                   | Separar en tabs con secciones claras                | ALTA      |
+| AdminFinanciera   | C   | Grids de presupuestos confusos                  | Visual más claro, usar barras de progreso           | MEDIA     |
+| AdminFinanciera   | A   | Colores financieros no estándar                 | Usar verde=ingreso, rojo=gasto, azul=balance       | MEDIA     |
+
+================================================================================
+ÁREA: RRHH - PANEL Y EMPLEADOS
+================================================================================
+| Área Afectada     | Cat | Problema Visual                                  | Recomendación de Diseño                              | Prioridad |
+|-------------------|-----|-------------------------------------------------|------------------------------------------------------|-----------|
+| PanelRRHH.js      | A   | Panel sobrecargado de información              | Simplificar dashboard, priorizar KPIs              | ALTA      |
+| PanelRRHH.js      | C   | Widgets de estadísticas desproporcionados        | Grid consistente, mismos tamaños                    | MEDIA     |
+| listEmpleados.js  | A   | Tabla muy larga (1248 líneas) - overwhelme     | Implementar paginación visual clara                 | ALTA      |
+| listEmpleados.js  | B   | Avatar de empleado muy pequeño                  | Aumentar size, añadir iniciales si no hay imagen    | MEDIA     |
+| listEmpleados.js  | D   | Sin feedback de carga en búsquedas             | Añadir skeleton o spinner                            | MEDIA     |
+| listEmpleados.js  | B   | Filters muy escondidos, poco visibles           | Hacer filtros más prominentes, sticky header        | ALTA      |
+
+================================================================================
+ÁREA: GESTIÓN DE DENUNCIAS Y LICENCIAS (ADMIN)
+================================================================================
+| Área Afectada     | Cat | Problema Visual                                  | Recomendación de Diseño                              | Prioridad |
+|-------------------|-----|-------------------------------------------------|------------------------------------------------------|-----------|
+| gestionDenuncias | B   | Mapas muy grandes, desplazan contenido         | Permitir collapse del mapa, más espacio tabla      | MEDIA     |
+| gestionDenuncias | C   | Tabs muy juntos sin diferenciación             | Mayor spacing, indicadores activos claros          | MEDIA     |
+| gestionLicencias | B   | Dashboard con demasiados gráficos              | Reducir a 4-6 métricas principales                 | ALTA      |
+| gestionLicencias | B   |console.log visible en UI (error de debug)      | Eliminar completamente                              | ALTA      |
+
+================================================================================
+ÁREA: COMPONENTES COMPARTIDOS (TOAST, MODALES)
+================================================================================
+| Área Afectada     | Cat | Problema Visual                                  | Recomendación de Diseño                              | Prioridad |
+|-------------------|-----|-------------------------------------------------|------------------------------------------------------|-----------|
+| useToast          | D   | Toast puede acumularse sin límite              | Máximo 3 toasts simultáneos, auto-dismiss           | MEDIA     |
+| useConfirmModal   | B   | Modal muy básico, sin diseño consistente        | Unificar estilo con otros modales del sistema      | MEDIA     |
+| useConfirmModal   | D   | No hay feedback visual de loading              | Añadir spinner en botón confirmar durante acción    | MEDIA     |
+| validation.js     | D   | Mensajes de error muy agresivos                | Rediseñar con iconos, colores suaves, mejorable    | MEDIA     |
+
+================================================================================
+RESUMEN VISUAL POR PRIORIDAD:
+================================================================================
+
+=== PRIORIDAD ALTA (18 items) ===
+1. permisos.js - KPIs muestran null/0 cuando no hay datos
+2. licencia.js - Stats muestran undefined
+3. permisosForm.js - Formulario muy largo (necesita wizard)
+4. Inventario.js - Estilos inline excesivos
+5. Inventario.js - Tabla con overflow horizontal
+6. Inventario.js - Modales muy largos
+7. PanelRRHH.js - Panel sobrecargado
+8. listEmpleados.js - Tabla sin paginación visual
+9. listEmpleados.js - Filtros poco visibles
+10. Planificacion.js - Módulo muy cargado
+11. Planificacion.js - Demasiados gráficos
+12. AdminFinanciera - Demasiados datos en una vista
+13. gestionLicencias - console.log visible en UI
+14. perfilUsers.js - Modal no cierra al hacer click fuera
+15. gestionDenuncias - Mapa muy grande
+16. gestionLicencias - Dashboard con demasiados gráficos
+17. Login.js - Formulario no responsivo
+18. Login.js - Botón sin feedback visual
+
+=== PRIORIDAD MEDIA (22 items) ===
+- Consistencia de colores y badges
+- Espacing y padding inconsistente
+- Tamaño de iconos variables
+- Responsive design incompleto
+- Feedback de carga ausente
+- Modales desalineados
+
+=== PRIORIDAD BAJA (12 items) ===
+- Detalles menores de tipografía
+- Gradientes inconsistentes
+- Bordes y radius no uniformes
+
+================================================================================
+GUÍA DE DISEÑO RECOMENDADA - SISTEMA "ECOGEST":
+================================================================================
+
+COLORES PRINCIPALES:
+- Primary Eco: #10B981 (verde esmeralda)
+- Secondary: #059669 (verde oscuro)
+- Accent: #F59E0B (ámbar/warning)
+- Danger: #EF4444 (rojo)
+- Background: #F9FAFB (gris claro)
+- Surface: #FFFFFF (blanco)
+
+TIPOGRAFÍA:
+- Headers: "Montserrat", sans-serif
+- Body: "Inter", system-ui, sans-serif
+- Data/Numbers: "JetBrains Mono", monospace
+
+ESPACING (sistema 8px):
+- xs: 4px
+- sm: 8px
+- md: 16px
+- lg: 24px
+- xl: 32px
+- 2xl: 48px
+
+COMPONENTES:
+- Border Radius: 8px (sm), 12px (md), 16px (lg)
+- Shadows: 0 1px 3px (sm), 0 4px 6px (md), 0 10px 20px (lg)
+- Buttons: min-height 44px (accesibilidad touch)
+
+================================================================================
+CHECKLIST VISUAL ANTES DE RELEASE:
+================================================================================
+[ ] Todos los formularios tienen estados de loading
+[ ] Todos los botones tienen hover/active states
+[ ] Las tablas tienen empty states diseñados
+[ ] Los modales tienen animation de entrada
+[ ] El responsive funciona en 320px, 768px, 1024px, 1440px
+[ ] Los colores pasan contraste WCAG AA (4.5:1)
+[ ] Los iconos son consistentes en tamaño
+[ ] No hay console.log/debug visible
+[ ] Los mensajes de error son дружелюбны (amigables)
+[ ] Las transiciones son smooth (300ms recommended)
+
+================================================================================
+FIN DEL ANÁLISIS ESTÉTICO VISUAL
+================================================================================
+Total problemas visuales identificados: 52
+Prioridad Alta: 18
+Prioridad Media: 22
+Prioridad Baja: 12
+================================================================================

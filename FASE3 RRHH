@@ -1,0 +1,183 @@
+# Plan de Desarrollo Técnico y Arquitectura - ECOGEST MINEC (Fase 3)
+
+Este documento detalla la arquitectura para implementar los 3 nuevos ejes funcionales solicitados (Gestión Operativa, Evaluación/Capacitación, y Seguridad/Unificación) estructurados estrictamente para operar en el cliente usando React y `localStorage`, cumpliendo la restricción de **no incluir nómina/finanzas ni backend**.
+
+---
+
+## 1. Arquitectura de Datos Locales (JSON Schema para localStorage)
+
+Para soportar los nuevos módulos sin corromper la data existente, extenderemos el `localStorage` con nuevas claves (Collections) y modificaremos algunas existentes.
+
+### A. Gestión Operativa y Tiempos (Time & Attendance)
+**Clave:** `asistenciaMinisterio`
+Propósito: Registro transaccional de entradas, salidas y cálculo de horas.
+```json
+[
+  {
+    "id": "AST-20260601-001",
+    "empleadoId": 1,
+    "fecha": "2026-06-01",
+    "horaEntrada": "08:00:00",
+    "horaSalida": "17:00:00",
+    "horasTrabajadas": 9,
+    "incidencias": ["Llegada tardía", "Falta injustificada"], // Array de strings
+    "estado": "Completado" // "En curso", "Completado", "Ausente"
+  }
+]
+```
+
+### B. Evaluación de Desempeño y Capacitación
+**Clave:** `evaluacionesMinisterio`
+Propósito: Guardar los formularios de evaluación 360°.
+```json
+[
+  {
+    "id": "EVAL-2026-Q2-001",
+    "evaluadoId": 2,
+    "evaluadorId": 5,
+    "tipo": "Supervisor", // "Auto", "Supervisor", "Par"
+    "periodo": "2026-Q2",
+    "competenciasOperativas": {
+      "trabajoEnEquipo": 4,
+      "resolucionProblemas": 5,
+      "eficienciaCampo": 4
+    },
+    "comentarios": "Excelente desempeño en inspecciones.",
+    "fecha": "2026-06-01T10:00:00Z"
+  }
+]
+```
+
+**Clave:** `okrsMinisterio`
+Propósito: Tablero de objetivos departamentales.
+```json
+[
+  {
+    "id": "OKR-DEP-01",
+    "departamento": "Fiscalización Ambiental",
+    "proyecto": "Reducción de Tala Ilegal",
+    "objetivo": "Aumentar inspecciones preventivas en un 20%",
+    "kpis": [
+      { "nombre": "Inspecciones semanales", "meta": 50, "actual": 35 }
+    ],
+    "fechaInicio": "2026-01-01",
+    "fechaFin": "2026-12-31"
+  }
+]
+```
+
+**Extensión de Expediente (Capacitaciones)**
+En lugar de una clave nueva, extenderemos los objetos dentro de `expedientesMinisterio` para incluir los cursos, lo cual se enlazará con `ExpedienteVisorDigital.js`.
+```json
+// Dentro de un objeto de expedientesMinisterio:
+{
+  "id": "EXP-001",
+  "empleadoId": 1,
+  "documentos": [...],
+  "capacitaciones": [
+    {
+      "cursoId": "CUR-001",
+      "nombre": "Manejo de Desechos Peligrosos",
+      "fechaAprobacion": "2026-05-15",
+      "horasAcademicas": 40,
+      "certificadoUrl": "link_simulado.pdf" // Renderizado en ExpedienteVisorDigital
+    }
+  ]
+}
+```
+
+### C. Seguridad Simulada (RBAC)
+**Clave:** `authMinisterio`
+Propósito: Mantener la sesión activa y el rol del usuario actual.
+```json
+{
+  "isAuthenticated": true,
+  "usuario": {
+    "id": "USR-001",
+    "nombre": "Admin General",
+    "rol": "ADMIN", // Roles: ADMIN, RRHH, GA, CONSULTA, CIUDADANO
+    "tokenSimulado": "abc123xyz"
+  },
+  "loginDate": "2026-06-01T08:00:00Z"
+}
+```
+
+---
+
+## 2. Arquitectura de Funciones y Hooks (React)
+
+La lógica de negocio se aislará en Custom Hooks y Servicios para mantener los componentes visuales limpios.
+
+### A. Hook: `useAsistencia` (Control de Tiempos)
+**Estado:**
+- `registrosHoy`: Asistencias filtradas por el día actual.
+- `estadisticas`: Horas promedio, % de ausentismo.
+**Lógica:**
+- `registrarMarcaje(empleadoId, tipo)`: Calcula si es entrada o salida. Si es salida, hace el `diff` de horas y lo guarda en `horasTrabajadas`. Detecta si la hora actual es posterior a la regla de negocio (ej. > 08:30 AM) y marca automáticamente una incidencia de "Llegada tardía".
+
+### B. Hook: `useVacaciones` (Motor de Reglas)
+**Lógica Principal:**
+- `calcularDiasDisponibles(empleadoId)`: Busca el `ingreso` del empleado en `empleadosMinisterio`. Calcula años de antigüedad. Aplica la regla (ej. 15 días base + 1 día extra por cada año). Resta los días ya aprobados buscando en `solicitudesRRHHMinisterio`.
+- `validarColision(empleadoId, fechaInicio, fechaFin)`: 
+  1. Identifica el `departamento` o `cuadrillaId` del empleado.
+  2. Filtra `solicitudesRRHHMinisterio` buscando permisos 'Aprobados' en ese mismo rango de fechas para otros miembros del mismo equipo.
+  3. Si la concurrencia supera un umbral (ej. > 20% del equipo ausente), retorna un *Warning* visual para RRHH.
+
+### C. Hook: `useCapacityPlanning` (Planificación Operativa)
+**Lógica Principal:**
+- `evaluarCapacidad(departamento)`:
+  - Total empleados en departamento (desde `empleadosMinisterio` activos).
+  - Empleados ausentes hoy (buscando en `solicitudesRRHHMinisterio` permisos activos hoy + `asistenciaMinisterio` con ausencias).
+  - Retorna un semáforo (Verde, Amarillo, Rojo). Si Empleados Disponibles < 50%, lanza una alerta de "Capacidad Operativa Crítica".
+
+### D. Hook: `useAuth` y Componente `ProtectedRoute` (Seguridad RBAC)
+**Lógica:**
+- `useAuth()`: Lee de `authMinisterio`. Provee `login(user, pass)`, `logout()`, y `hasRole(roleArray)`.
+- **HOC/Wrapper `ProtectedRoute`**:
+  ```jsx
+  const ProtectedRoute = ({ children, allowedRoles }) => {
+    const { usuario, isAuthenticated } = useAuth();
+    if (!isAuthenticated) return <Navigate to="/login" />;
+    if (!allowedRoles.includes(usuario.rol)) return <Navigate to="/unauthorized" />;
+    return children;
+  };
+  ```
+- **Implementación en `routes.js`**: Envolver cada ruta en `<ProtectedRoute allowedRoles={['ADMIN', 'RRHH']}>`.
+
+### E. Servicio Unificado: `DataFlowService` (Fusión de Denuncias)
+**Problema Actual:** `denunciasCiudadano` y `denunciasMinisterio` son silos separados.
+**Solución:** Se creará un servicio en `src/services/dataFlowService.js`.
+- `sincronizarDenuncias()`: Función que se ejecuta al cargar el `AdminPanel`. Lee todas las denuncias de `denunciasCiudadano` que no existan en `denunciasMinisterio` (cruzando por ID). Las inyecta en `denunciasMinisterio` con estado `'pendiente'` y origen `'portal_ciudadano'`.
+- De esta forma, el ciudadano escribe en su sandbox, pero el Admin consolida y gestiona en su dashboard principal.
+
+---
+
+## 3. Alertas de Diseño Front-End ("Cosas a tomar con pinzas")
+
+Dado que el sistema confía 100% en el cliente y `localStorage`, hay riesgos arquitectónicos que debemos mitigar en el código React:
+
+1. **Cuello de Botella en el Renderizado por localStorage Síncrono:**
+   - **El riesgo:** Operaciones como `useCapacityPlanning` o validación de colisiones de vacaciones requieren leer y cruzar múltiples arreglos (`empleadosMinisterio` + `solicitudesRRHHMinisterio`). Leer grandes arrays de localStorage y parsearlos con `JSON.parse` en el render cycle (sincrónicamente) congelará la UI.
+   - **La solución:** Usar envoltorios asíncronos (`Promise.resolve()`) dentro de los hooks y manejar estados de `loading`. Emplear `useMemo` agresivamente para cachear cruces de datos mientras no cambien las dependencias.
+
+2. **Condiciones de Carrera (Race Conditions) Simuladas:**
+   - **El riesgo:** En un entorno real, la base de datos maneja la concurrencia. Aquí, si dos componentes intentan actualizar el `localStorage` de `solicitudesRRHHMinisterio` exactamente al mismo tiempo (ej. la Bandeja y el módulo de RRHH), el último en guardar sobreescribe los cambios del primero, perdiendo data.
+   - **La solución:** Implementar un patrón de actualización atómica en los servicios (como `tramitesService`): siempre hacer `const data = obtenerTodo(); data.push(nuevo); guardarTodo(data);` de forma contigua, evitando mantener el arreglo viejo en estados de React por mucho tiempo antes de guardar.
+
+3. **Inmutabilidad del Expediente Digital:**
+   - **El riesgo:** Al inyectar el Módulo de Capacitación en `ExpedienteVisorDigital.js`, estaremos modificando el objeto general de expedientes.
+   - **La solución:** Tratar el array de `capacitaciones` como inmutable. Cada vez que se añade un curso, se debe crear una copia profunda (Deep Copy) del expediente antes de hacer el `localStorage.setItem`, para evitar que referencias a memoria corrompan la vista de React.
+
+4. **Límites de Cuota de localStorage (5MB):**
+   - **El riesgo:** Al guardar "fotos" y "certificados" simulados, si guardamos strings base64 muy largos, la aplicación hará *crash* por `QuotaExceededError`.
+   - **La solución:** El Módulo de Capacitación y el Visor de Expedientes deben guardar estrictamente *nombres de archivos* o *URLs relativas simuladas* (`"curso_react.pdf"`), NUNCA blobs de archivos reales en el JSON.
+
+---
+
+## Preguntas Abiertas (Open Questions)
+
+1. **Jerarquía de Roles:** Para el RBAC, ¿está de acuerdo con implementar 5 roles base (`ADMIN` global, `RRHH` exclusivo, `GA` exclusivo operativo, `CONSULTA` solo-lectura, y `CIUDADANO` portal)?
+2. **Tabulador de Antigüedad:** Para el motor de vacaciones, ¿usamos el estándar de la Ley Orgánica del Trabajo de Venezuela (LOTTT - 15 días base + 1 adicional por año), o hay una convención colectiva diferente para el Ministerio?
+3. **Flujo de Denuncias:** Para unificar las denuncias, ¿desea que `dataFlowService` mueva definitivamente la denuncia ciudadana al admin (borrándola de `denunciasCiudadano`), o prefiere mantenerla en ambos lados sincronizando sus estados (ej. si el admin la pasa a 'resuelta', que el ciudadano lo vea)? (Recomiendo la sincronización bidireccional).
+
+Por favor, revise este plan y brinde su aprobación para comenzar la codificación de la primera fase.

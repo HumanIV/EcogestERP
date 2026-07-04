@@ -1,0 +1,963 @@
+/* 
+    ECOGEST - Sistema de Gestión Administrativa MINEC 
+    Design System Centralizado para el Ministerio del Ecosocialismo
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+
+:root {
+    /* --- Paleta de Colores ECO-MINEC --- */
+
+    /* Primary Palette (Verdes - Ecosocialismo) */
+    --eco-50: #E8F5E9;
+    --eco-100: #C8E6C9;
+    --eco-200: #A5D6A7;
+    --eco-300: #81C784;
+    --eco-400: #66BB6A;
+    --eco-500: #4CAF50;
+    --eco-600: #43A047;
+    --eco-700: #388E3C;
+    --eco-800: #2E7D32;
+    --eco-900: #1B5E20;
+    --eco-950: #0D3B10;
+
+    /* Accent Palette (Azules/Turquesas - Recursos Naturales) */
+    --accent-500: #26A69A;
+    --accent-600: #00897B;
+    --accent-700: #00695C;
+
+    /* Earth Tones (Tonos Tierra - Sostenibilidad) */
+    --earth-100: #F5EBD8;
+    --earth-200: #E6D5B8;
+    --earth-300: #D4B996;
+    --earth-400: #C2A478;
+    --earth-500: #A1885C;
+
+    /* Neutrals (Grises Ecológicos) */
+    --neutral-50: #F9FAFB;
+    --neutral-100: #F3F4F6;
+    --neutral-200: #E5E7EB;
+    --neutral-300: #D1D5DB;
+    --neutral-400: #9CA3AF;
+    --neutral-500: #6B7280;
+    --neutral-600: #4B5563;
+    --neutral-700: #374151;
+    --neutral-800: #1F2937;
+    --neutral-900: #111827;
+
+    /* Semantic Colors (Colores Semánticos) */
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --info: #3B82F6;
+    --nature: #059669;
+
+    /* --- CoreUI Global Overrides --- */
+    --cui-primary: var(--eco-600);
+    --cui-primary-rgb: 67, 160, 71;
+    --cui-info: var(--accent-500);
+    --cui-info-rgb: 38, 166, 154;
+    --cui-warning: var(--warning);
+    --cui-warning-rgb: 245, 158, 11;
+    --cui-danger: var(--danger);
+    --cui-danger-rgb: 239, 68, 68;
+    --cui-body-bg: var(--neutral-50);
+
+    /* Overrides para ENLACES y TEXTO */
+    --cui-link-color: var(--eco-700);
+    --cui-link-hover-color: var(--eco-800);
+    --cui-nav-link-hover-color: var(--eco-500);
+    --cui-nav-pills-link-active-bg: var(--eco-600);
+    --cui-nav-pills-link-active-color: #ffffff !important;
+
+    /* --- Layout & Spacing --- */
+    --spacing-1: 0.25rem;
+    --spacing-2: 0.5rem;
+    --spacing-3: 0.75rem;
+    --spacing-4: 1rem;
+    --spacing-6: 1.5rem;
+    --spacing-8: 2rem;
+    --spacing-10: 2.5rem;
+    --spacing-12: 3rem;
+    --spacing-16: 4rem;
+
+    /* --- Borders & Radius --- */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.5rem;
+    --radius-3xl: 2rem;
+    --radius-full: 9999px;
+
+    /* --- Shadows (Elevación Ecológica) --- */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-eco: 0 10px 15px -3px rgba(76, 175, 80, 0.3);
+    --shadow-nature: 0 4px 6px -1px rgba(5, 150, 105, 0.1), 0 2px 4px -1px rgba(5, 150, 105, 0.06);
+
+    /* --- Glassmorphism Ecológico --- */
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-bg-dark: rgba(15, 42, 30, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-eco: rgba(232, 245, 233, 0.8);
+    --glass-blur: 12px;
+
+    /* --- Typography (Tipografía Institucional) --- */
+    --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-secondary: 'Montserrat', sans-serif;
+    --font-serif: 'Playfair Display', serif;
+    
+    /* Font Weights */
+    --fw-thin: 100;
+    --fw-extralight: 200;
+    --fw-light: 300;
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+    --fw-extrabold: 800;
+    --fw-heavy: 900;
+
+    /* --- Transitions (Transiciones Suaves) --- */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 300ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Base resets & global styles */
+body {
+    font-family: var(--font-primary);
+    font-weight: var(--fw-regular);
+    color: var(--neutral-800);
+    background-color: var(--neutral-50);
+    background-image: 
+        radial-gradient(at 10% 10%, rgba(76, 175, 80, 0.05) 0px, transparent 50%),
+        radial-gradient(at 90% 90%, rgba(38, 166, 154, 0.05) 0px, transparent 50%);
+    background-attachment: fixed;
+    line-height: 1.6;
+}
+
+/* ✅ FIX: CoreUI sets data-coreui-theme directly ON <body>, not on a parent */
+body[data-coreui-theme="dark"] {
+    color: var(--neutral-100);
+    background-color: #0F1A15;
+    background-image: 
+        radial-gradient(at 10% 10%, rgba(76, 175, 80, 0.1) 0px, transparent 50%),
+        radial-gradient(at 90% 90%, rgba(38, 166, 154, 0.1) 0px, transparent 50%);
+}
+/* Fallback for html-level attribute (some CoreUI versions) */
+[data-coreui-theme="dark"] body {
+    color: var(--neutral-100);
+    background-color: #0F1A15;
+}
+
+/* Enlaces institucionales */
+a {
+    color: var(--cui-link-color) !important;
+    text-decoration: none;
+    transition: var(--transition-fast);
+    font-weight: var(--fw-medium);
+}
+
+a:hover {
+    color: var(--cui-link-hover-color) !important;
+    text-decoration: underline;
+}
+
+/* Nav pills activos */
+.nav-pills .nav-link.active {
+    color: white !important;
+    background: var(--eco-600) !important;
+    box-shadow: var(--shadow-eco) !important;
+    font-weight: var(--fw-semibold) !important;
+}
+
+[data-coreui-theme="dark"] .nav-pills .nav-link:not(.active) {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+[data-coreui-theme="dark"] .nav-pills .nav-link:not(.active):hover {
+    background-color: rgba(76, 175, 80, 0.1) !important;
+    color: var(--eco-300) !important;
+}
+
+/* Tarjetas Premium Ecológicas */
+.eco-card {
+    background: var(--glass-eco);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid rgba(76, 175, 80, 0.15);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    transition: var(--transition-base);
+    overflow: hidden;
+}
+
+.eco-card:hover {
+    box-shadow: var(--shadow-xl);
+    border-color: rgba(76, 175, 80, 0.3);
+    transform: translateY(-2px);
+}
+
+.eco-card-header {
+    background: linear-gradient(135deg, var(--eco-50), var(--eco-100));
+    border-bottom: 1px solid rgba(76, 175, 80, 0.1);
+    padding: var(--spacing-6) var(--spacing-6) var(--spacing-4);
+}
+
+[data-coreui-theme="dark"] .eco-card {
+    background: rgba(30, 41, 35, 0.8) !important;
+    border: 1px solid rgba(76, 175, 80, 0.2) !important;
+    backdrop-filter: blur(16px) !important;
+}
+
+[data-coreui-theme="dark"] .eco-card-header {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(38, 166, 154, 0.1)) !important;
+    border-bottom: 1px solid rgba(76, 175, 80, 0.2) !important;
+}
+
+/* ✅ FIX: correct selectors for wrapper dark mode */
+body[data-coreui-theme="dark"] .body.flex-grow-1,
+body[data-coreui-theme="dark"] .wrapper,
+[data-coreui-theme="dark"] .body.flex-grow-1,
+[data-coreui-theme="dark"] .wrapper {
+    background-color: #0F1A15 !important;
+}
+
+/* Tipografía Helpers */
+.text-inter {
+    font-family: var(--font-primary) !important;
+}
+
+.text-montserrat {
+    font-family: var(--font-secondary) !important;
+}
+
+.text-playfair {
+    font-family: var(--font-serif) !important;
+}
+
+/* Weight Helpers */
+.fw-thin { font-weight: var(--fw-thin) !important; }
+.fw-extralight { font-weight: var(--fw-extralight) !important; }
+.fw-light { font-weight: var(--fw-light) !important; }
+.fw-regular { font-weight: var(--fw-regular) !important; }
+.fw-medium { font-weight: var(--fw-medium) !important; }
+.fw-semibold { font-weight: var(--fw-semibold) !important; }
+.fw-bold { font-weight: var(--fw-bold) !important; }
+.fw-extrabold { font-weight: var(--fw-extrabold) !important; }
+.fw-heavy { font-weight: var(--fw-heavy) !important; }
+
+/* Hierarchy Helpers */
+.fw-titles {
+    font-weight: var(--fw-bold);
+    letter-spacing: -0.025em;
+}
+
+.fw-data {
+    font-weight: var(--fw-semibold);
+}
+
+.fw-info {
+    font-weight: var(--fw-regular);
+}
+
+.fw-long-text {
+    font-weight: var(--fw-light);
+    line-height: 1.8;
+}
+
+/* Headings institucionales */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-secondary);
+    font-weight: var(--fw-bold);
+    color: var(--neutral-900);
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+h1 {
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, var(--eco-700), var(--accent-600));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-coreui-theme="dark"] h1,
+[data-coreui-theme="dark"] h2,
+[data-coreui-theme="dark"] h3,
+[data-coreui-theme="dark"] h4,
+[data-coreui-theme="dark"] h5,
+[data-coreui-theme="dark"] h6 {
+    color: var(--neutral-100);
+}
+
+/* --- SIDEBAR MINEC PREMIUM --- */
+.sidebar-minec {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FCF9 100%) !important;
+    border-right: 1px solid rgba(76, 175, 80, 0.1) !important;
+    width: 280px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+[data-coreui-theme="dark"] .sidebar-minec {
+    background: linear-gradient(180deg, #1A2A21 0%, #0F1A15 100%) !important;
+    border-right: 1px solid rgba(76, 175, 80, 0.2) !important;
+}
+
+.sidebar-minec .sidebar-header {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(76, 175, 80, 0.1) !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .sidebar-header {
+    border-bottom: 1px solid rgba(76, 175, 80, 0.2) !important;
+}
+
+/* Logo MINEC en header */
+.sidebar-logo-minec {
+    padding: 2rem 1.5rem 1.5rem !important;
+    text-align: center;
+    background: linear-gradient(180deg, var(--eco-50), transparent);
+}
+
+[data-coreui-theme="dark"] .sidebar-logo-minec {
+    background: linear-gradient(180deg, rgba(76, 175, 80, 0.1), transparent);
+}
+
+.sidebar-header-title-minec {
+    font-family: var(--font-secondary);
+    color: var(--eco-800);
+    font-size: 1.5rem;
+    font-weight: var(--fw-bold);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.5px;
+}
+
+.sidebar-header-subtitle-minec {
+    font-family: var(--font-primary);
+    color: var(--neutral-600);
+    font-size: 0.875rem;
+    font-weight: var(--fw-medium);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+[data-coreui-theme="dark"] .sidebar-header-title-minec {
+    color: var(--eco-300);
+}
+
+[data-coreui-theme="dark"] .sidebar-header-subtitle-minec {
+    color: var(--neutral-400);
+}
+
+/* Navegación principal */
+.sidebar-minec .sidebar-nav {
+    flex: 1 1 auto !important;
+    padding-top: 1rem !important;
+    z-index: 1 !important;
+}
+
+.sidebar-minec .nav-link {
+    padding: 0.875rem 1.5rem !important;
+    font-family: var(--font-primary);
+    font-weight: var(--fw-medium) !important;
+    color: var(--neutral-700) !important;
+    display: flex;
+    align-items: center;
+    transition: var(--transition-base) !important;
+    margin: 0.25rem 1rem !important;
+    border-radius: var(--radius-lg) !important;
+    border: 1px solid transparent !important;
+    position: relative;
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .nav-link {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Indicador de estado activo */
+.sidebar-minec .nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 0;
+    background: var(--eco-600);
+    border-radius: 0 4px 4px 0;
+    transition: var(--transition-base);
+}
+
+.sidebar-minec .nav-link.active::before {
+    height: 70%;
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .nav-link::before {
+    background: var(--eco-500);
+}
+
+/* Estados hover */
+.sidebar-minec .nav-link:hover:not(.active) {
+    background: rgba(76, 175, 80, 0.08) !important;
+    color: var(--eco-700) !important;
+    border-color: rgba(76, 175, 80, 0.15) !important;
+    transform: translateX(4px);
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .nav-link:hover:not(.active) {
+    color: var(--eco-300) !important;
+    background: rgba(76, 175, 80, 0.15) !important;
+}
+
+/* Estado activo */
+.sidebar-minec .nav-link.active {
+    background: linear-gradient(90deg, rgba(76, 175, 80, 0.15), transparent) !important;
+    color: var(--eco-800) !important;
+    border-left: 3px solid var(--eco-600) !important;
+    font-weight: var(--fw-semibold) !important;
+}
+
+.sidebar-minec .nav-link.active .nav-icon {
+    color: var(--eco-600) !important;
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .nav-link.active {
+    background: linear-gradient(90deg, rgba(76, 175, 80, 0.25), transparent) !important;
+    color: white !important;
+    border-left: 3px solid var(--eco-500) !important;
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .nav-link.active .nav-icon {
+    color: var(--eco-400) !important;
+}
+
+/* Iconos */
+.sidebar-minec .nav-icon {
+    color: var(--neutral-500) !important;
+    margin-right: 1rem !important;
+    font-size: 1.125rem !important;
+    transition: var(--transition-fast);
+    width: 24px;
+    text-align: center;
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .nav-icon {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.sidebar-minec .nav-link:hover:not(.active) .nav-icon {
+    color: var(--eco-600) !important;
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .nav-link:hover:not(.active) .nav-icon {
+    color: var(--eco-400) !important;
+}
+
+/* Grupos de navegación */
+.sidebar-minec .nav-group-items {
+    background: transparent !important;
+    margin-left: 1.5rem !important;
+    border-left: 2px solid rgba(76, 175, 80, 0.1);
+    padding-left: 0.5rem !important;
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .nav-group-items {
+    border-left-color: rgba(76, 175, 80, 0.2) !important;
+}
+
+/* Títulos de sección */
+.sidebar-minec .nav-title {
+    font-family: var(--font-secondary);
+    color: var(--eco-700);
+    font-size: 0.75rem !important;
+    font-weight: var(--fw-bold) !important;
+    letter-spacing: 1px !important;
+    padding: 1.5rem 1.5rem 0.5rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    text-transform: uppercase;
+    opacity: 0.9;
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .nav-title {
+    color: var(--eco-400);
+    opacity: 0.8;
+}
+
+/* Flechas de grupos desplegables */
+.sidebar-minec .nav-group .nav-link[aria-expanded="true"] .ms-auto {
+    transform: rotate(180deg);
+    transition: var(--transition-base);
+}
+
+/* Items indentados */
+.sidebar-minec .nav-item-indent {
+    margin-left: 1rem !important;
+}
+
+.sidebar-minec .nav-item-indent .nav-link {
+    margin: 0.125rem 0.5rem !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+    border-radius: var(--radius-md) !important;
+}
+
+.sidebar-minec .nav-item-indent .nav-link::before {
+    display: none;
+}
+
+/* Modo compacto */
+.sidebar-minec:not(.c-sidebar-unfoldable) {
+    width: 280px !important;
+    transition: width var(--transition-base);
+}
+
+.sidebar-minec.c-sidebar-unfoldable {
+    width: 72px !important;
+}
+
+/* Ajustes modo compacto */
+.sidebar-minec.c-sidebar-unfoldable .sidebar-header-title-minec,
+.sidebar-minec.c-sidebar-unfoldable .sidebar-header-subtitle-minec,
+.sidebar-minec.c-sidebar-unfoldable .nav-link-text,
+.sidebar-minec.c-sidebar-unfoldable .nav-title,
+.sidebar-minec.c-sidebar-unfoldable .badge,
+.sidebar-minec.c-sidebar-unfoldable .nav-group .nav-link .ms-auto {
+    display: none !important;
+}
+
+/* Tooltips modo compacto */
+.sidebar-minec.c-sidebar-unfoldable .nav-link:hover::after {
+    content: attr(data-title);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--eco-700);
+    color: white;
+    padding: 0.5rem 0.875rem;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    font-weight: var(--fw-medium);
+    white-space: nowrap;
+    z-index: 9999;
+    margin-left: 0.75rem;
+    box-shadow: var(--shadow-md);
+    pointer-events: none;
+    min-width: max-content;
+}
+
+[data-coreui-theme="dark"] .sidebar-minec.c-sidebar-unfoldable .nav-link:hover::after {
+    background: var(--eco-600);
+}
+
+/* Scrollbar sidebar */
+.sidebar-minec .sidebar-nav-container {
+    scrollbar-width: thin;
+    scrollbar-color: var(--eco-300) transparent;
+}
+
+.sidebar-minec .sidebar-nav-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-minec .sidebar-nav-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-minec .sidebar-nav-container::-webkit-scrollbar-thumb {
+    background-color: var(--eco-300);
+    border-radius: var(--radius-full);
+}
+
+.sidebar-minec .sidebar-nav-container::-webkit-scrollbar-thumb:hover {
+    background-color: var(--eco-400);
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .sidebar-nav-container::-webkit-scrollbar-thumb {
+    background-color: var(--eco-600) !important;
+}
+
+[data-coreui-theme="dark"] .sidebar-minec .sidebar-nav-container::-webkit-scrollbar-thumb:hover {
+    background-color: var(--eco-500) !important;
+}
+
+/* --- HEADER MINEC PREMIUM --- */
+.header-minec {
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border-bottom: 1px solid rgba(76, 175, 80, 0.1) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    transition: var(--transition-base);
+    min-height: 64px !important;
+}
+
+.header-minec.shadow-sm {
+    border-bottom: 1px solid rgba(76, 175, 80, 0.15) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-coreui-theme="dark"] .header-minec {
+    background: rgba(15, 26, 21, 0.95) !important;
+    border-bottom: 1px solid rgba(76, 175, 80, 0.2) !important;
+}
+
+/* Breadcrumb institucional */
+.breadcrumb-container-minec {
+    padding-left: 2.5rem !important;
+    background: linear-gradient(90deg, var(--eco-50), transparent);
+}
+
+.breadcrumb-item a {
+    color: var(--eco-700) !important;
+    font-weight: var(--fw-medium);
+}
+
+.breadcrumb-item.active {
+    color: var(--neutral-600) !important;
+    font-weight: var(--fw-regular);
+}
+
+[data-coreui-theme="dark"] .breadcrumb-container-minec {
+    background: linear-gradient(90deg, rgba(76, 175, 80, 0.1), transparent);
+}
+
+[data-coreui-theme="dark"] .breadcrumb-item.active {
+    color: var(--neutral-400) !important;
+}
+
+/* --- BOTONES MINEC --- */
+.btn-minec {
+    background: linear-gradient(135deg, var(--eco-600), var(--eco-700));
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: 0.75rem 1.5rem;
+    font-weight: var(--fw-semibold);
+    transition: var(--transition-base);
+    box-shadow: var(--shadow-eco);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-minec:hover {
+    background: linear-gradient(135deg, var(--eco-700), var(--eco-800));
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+}
+
+.btn-minec:active {
+    transform: translateY(0);
+}
+
+.btn-minec-outline {
+    background: transparent;
+    color: var(--eco-700) !important;
+    border: 2px solid var(--eco-600) !important;
+    box-shadow: none;
+}
+
+.btn-minec-outline:hover {
+    background: var(--eco-600) !important;
+    color: white !important;
+}
+
+.btn-minec-success {
+    background: linear-gradient(135deg, var(--nature), var(--eco-700));
+}
+
+.btn-minec-success:hover {
+    background: linear-gradient(135deg, var(--eco-700), var(--nature));
+}
+
+/* Icon buttons */
+.btn-icon-minec {
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+    transition: var(--transition-base);
+}
+
+.btn-icon-minec:hover {
+    background: var(--eco-600) !important;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-eco);
+}
+
+/* --- INPUTS Y FORMULARIOS --- */
+.input-minec {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid var(--neutral-200);
+    border-radius: var(--radius-lg);
+    transition: var(--transition-base);
+    font-family: var(--font-primary);
+}
+
+.input-minec:focus {
+    border-color: var(--eco-500);
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15);
+    background: white;
+}
+
+[data-coreui-theme="dark"] .input-minec {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+[data-coreui-theme="dark"] .input-minec:focus {
+    border-color: var(--eco-500);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* --- BACKGROUNDS & UTILITIES --- */
+.bg-eco-soft {
+    background-color: rgba(76, 175, 80, 0.1) !important;
+}
+
+.bg-nature-soft {
+    background-color: rgba(5, 150, 105, 0.1) !important;
+}
+
+.bg-light-minec {
+    background-color: #F8FCF9 !important;
+}
+
+[data-coreui-theme="dark"] .bg-eco-soft {
+    background-color: rgba(76, 175, 80, 0.15) !important;
+    border: 1px solid rgba(76, 175, 80, 0.2) !important;
+}
+
+[data-coreui-theme="dark"] .bg-light-minec {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Badges ecológicos */
+.badge-eco {
+    background-color: var(--eco-50) !important;
+    color: var(--eco-800) !important;
+    border: 1px solid rgba(76, 175, 80, 0.2);
+    font-weight: var(--fw-medium);
+}
+
+.badge-nature {
+    background-color: rgba(5, 150, 105, 0.1) !important;
+    color: #065F46 !important;
+    border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+/* --- TABLAS ADMINISTRATIVAS --- */
+.table-minec {
+    --cui-table-bg: transparent;
+    --cui-table-striped-bg: rgba(76, 175, 80, 0.03);
+    --cui-table-hover-bg: rgba(76, 175, 80, 0.05);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.table-minec thead {
+    background: linear-gradient(135deg, var(--eco-50), var(--eco-100));
+}
+
+.table-minec th {
+    font-weight: var(--fw-semibold);
+    color: var(--eco-800);
+    border-bottom: 2px solid var(--eco-200);
+}
+
+[data-coreui-theme="dark"] .table-minec thead {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.2));
+}
+
+[data-coreui-theme="dark"] .table-minec th {
+    color: var(--eco-300);
+    border-bottom-color: rgba(76, 175, 80, 0.3);
+}
+
+/* --- MODALES INSTITUCIONALES --- */
+.modal-minec .modal-content {
+    border: none;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-xl);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+}
+
+.modal-minec .modal-header {
+    background: linear-gradient(135deg, var(--eco-50), var(--eco-100));
+    border-bottom: 1px solid rgba(76, 175, 80, 0.1);
+    font-family: var(--font-secondary);
+}
+
+[data-coreui-theme="dark"] .modal-minec .modal-content {
+    background: var(--glass-bg-dark);
+    border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+[data-coreui-theme="dark"] .modal-minec .modal-header {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.2));
+    border-bottom-color: rgba(76, 175, 80, 0.2);
+}
+
+/* --- PAGINACIÓN --- */
+.pagination-minec .page-link {
+    color: var(--eco-700);
+    border: 1px solid var(--eco-200);
+    border-radius: var(--radius-md);
+    margin: 0 2px;
+    transition: var(--transition-fast);
+}
+
+.pagination-minec .page-item.active .page-link {
+    background: linear-gradient(135deg, var(--eco-600), var(--eco-700));
+    border-color: var(--eco-600);
+    color: white !important;
+}
+
+.pagination-minec .page-link:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: var(--eco-400);
+}
+
+/* --- SCROLLBAR GLOBAL --- */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--neutral-100);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--eco-300);
+    border-radius: var(--radius-full);
+    border: 2px solid var(--neutral-100);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--eco-400);
+}
+
+[data-coreui-theme="dark"] ::-webkit-scrollbar-track {
+    background: var(--neutral-900);
+}
+
+[data-coreui-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: var(--eco-600);
+    border-color: var(--neutral-900);
+}
+
+[data-coreui-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--eco-500);
+}
+
+/* --- UTILIDADES DE TEXTO --- */
+.text-eco {
+    color: var(--eco-600) !important;
+}
+
+.text-nature {
+    color: var(--nature) !important;
+}
+
+.text-minec-muted {
+    color: var(--neutral-500) !important;
+}
+
+[data-coreui-theme="dark"] .text-minec-muted {
+    color: var(--neutral-400) !important;
+}
+
+/* --- ANIMACIONES --- */
+@keyframes fadeInEco {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-eco {
+    animation: fadeInEco 0.3s ease-out;
+}
+
+@keyframes pulseEco {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+    }
+}
+
+.animate-pulse-eco {
+    animation: pulseEco 2s infinite;
+}
+
+/* --- RESPONSIVE UTILITIES --- */
+@media (max-width: 768px) {
+    .sidebar-minec:not(.c-sidebar-unfoldable) {
+        width: 240px !important;
+    }
+    
+    .sidebar-header-title-minec {
+        font-size: 1.25rem;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+}
+
+/* --- ESTILOS ESPECÍFICOS PARA GESTIÓN ADMINISTRATIVA --- */
+.stats-card-minec {
+    background: linear-gradient(135deg, var(--eco-50), white);
+    border: 1px solid rgba(76, 175, 80, 0.2);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-6);
+    transition: var(--transition-base);
+}
+
+.stats-card-minec:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+.stats-icon-minec {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--eco-500), var(--accent-500));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+}
+
+[data-coreui-theme="dark"] .stats-card-minec {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(30, 41, 35, 0.8));
+    border-color: rgba(76, 175, 80, 0.3);
+}

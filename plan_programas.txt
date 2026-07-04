@@ -1,0 +1,402 @@
+================================================================================
+PLAN: Módulo "Programas" (ERP + Portal + Backend + Stitch)
+================================================================================
+
+Arquitectura general
+────────────────────
+Backend (db.json)
+├── /programas        ← catálogo de iniciativas ciudadanas
+└── /voluntarios      ← inscripciones de ciudadanos a programas
+         │
+    ┌────┴────┐
+    ↓         ↓
+  Portal     ERP
+  (lectura)  (CRUD completo)
+  público    backoffice
+
+
+================================================================================
+PARTE 1 — Backend (Ecogest Backend/db.json)
+================================================================================
+
+Añadir 2 colecciones nuevas al archivo db.json:
+
+1. Colección /programas
+───────────────────────
+Cada registro representa una iniciativa ciudadana activa.
+
+Campos:
+  id              string   "PROG-001" (auto-generado: PROG-{número})
+  titulo          string   Nombre visible del programa
+  icono           string   Nombre del icono Material Symbols (ej: "shield_person")
+  descripcion     string   Texto descriptivo (2-3 líneas)
+  tipo            string   guardianes | mesas_tecnicas | reforestacion | brigadas
+  activo          boolean  true = visible en portal público
+  meta            string   Texto resumen (ej: "+500 voluntarios activos")
+  fechaCreacion   string   Fecha ISO "2024-01-01"
+
+Seed data inicial (4 registros):
+[
+  {
+    "id": "PROG-001",
+    "titulo": "Guardianes Ambientales",
+    "icono": "shield_person",
+    "descripcion": "Red de ciudadanos voluntarios que monitorean y reportan incidencias ambientales en sus comunidades. Capacitación gratuita del MINEC.",
+    "tipo": "guardianes",
+    "activo": true,
+    "meta": "+500 voluntarios activos",
+    "fechaCreacion": "2024-01-15"
+  },
+  {
+    "id": "PROG-002",
+    "titulo": "Mesas Técnicas de Agua",
+    "icono": "water_drop",
+    "descripcion": "Organización comunitaria para la gestión y protección de fuentes hídricas. Participa en tu cuenca local y contribuye al Plan Nacional del Agua.",
+    "tipo": "mesas_tecnicas",
+    "activo": true,
+    "meta": "200 mesas activas",
+    "fechaCreacion": "2024-02-01"
+  },
+  {
+    "id": "PROG-003",
+    "titulo": "Reforestación Nacional",
+    "icono": "park",
+    "descripcion": "Jornadas de siembra en áreas degradadas. Más de 5 millones de árboles plantados con voluntarios en los 23 estados del país.",
+    "tipo": "reforestacion",
+    "activo": true,
+    "meta": "5M+ árboles plantados",
+    "fechaCreacion": "2024-03-10"
+  },
+  {
+    "id": "PROG-004",
+    "titulo": "Brigadas contra Incendios",
+    "icono": "local_fire_department",
+    "descripcion": "Formación y equipamiento para prevención y respuesta temprana ante incendios forestales durante la temporada seca.",
+    "tipo": "brigadas",
+    "activo": true,
+    "meta": "+150 brigadistas formados",
+    "fechaCreacion": "2024-04-20"
+  }
+]
+
+2. Colección /voluntarios
+───────────────────────────
+Cada registro representa un ciudadano inscrito en un programa.
+
+Campos:
+  id                string   "VOL-001" (auto-generado)
+  programaId        string   Referencia al id del programa (PROG-XXX)
+  userId            string   ID del usuario ciudadano (opcional si no autenticado)
+  nombre            string   Nombre completo del voluntario
+  email             string   Correo electrónico
+  telefono          string   Número de contacto
+  comentario        string   Por qué quiere participar (opcional)
+  estado            string   pendiente | aprobado | rechazado
+  fechaInscripcion  string   Fecha ISO "2024-06-15"
+
+Seed data inicial (3 registros):
+[
+  {
+    "id": "VOL-001",
+    "programaId": "PROG-001",
+    "userId": "3",
+    "nombre": "María González",
+    "email": "maria@email.com",
+    "telefono": "+58 412-1234567",
+    "comentario": "Vivo cerca del Parque Nacional y quiero ayudar a protegerlo",
+    "estado": "aprobado",
+    "fechaInscripcion": "2024-06-15"
+  },
+  {
+    "id": "VOL-002",
+    "programaId": "PROG-003",
+    "userId": "4",
+    "nombre": "Carlos Ramírez",
+    "email": "carlos@email.com",
+    "telefono": "+58 414-9876543",
+    "comentario": "Soy estudiante de ingeniería forestal",
+    "estado": "pendiente",
+    "fechaInscripcion": "2024-07-01"
+  },
+  {
+    "id": "VOL-003",
+    "programaId": "PROG-002",
+    "userId": "5",
+    "nombre": "Luisa Fernández",
+    "email": "luisa@email.com",
+    "telefono": "+58 416-5551234",
+    "comentario": "",
+    "estado": "aprobado",
+    "fechaInscripcion": "2024-06-20"
+  }
+]
+
+
+================================================================================
+PARTE 2 — Portal Ciudadano (Ecogest Portal/)
+================================================================================
+
+Archivos a crear/modificar: 4
+
+A. NUEVO: src/services/programasService.js
+───────────────────────────────────────────
+Sigue el patrón exacto de denunciasService.js (objeto literal, funciones async, 
+try/catch, retorna { success, data, error? }).
+
+Endpoint: /programas y /voluntarios
+Funciones:
+  - obtenerProgramasActivos()       → GET /programas?activo=true
+  - inscribirVoluntario(datos, token) → POST /voluntarios (con token para auth)
+  - obtenerMiInscripcion(userId, programaId) → GET /voluntarios?userId=X&programaId=Y
+
+B. NUEVO: src/views/Participa/Participa.js
+───────────────────────────────────────────
+Página pública accesible sin autenticación. Lazy-loaded desde App.js.
+
+Estructura del componente:
+  1. Header con breadcrumb "Inicio / Participa" + título h1 eco-gradient "Participa"
+     + subtítulo + icono groups grande en círculo glass
+  
+  2. Sección Iniciativas: 4 cards grid 2×2 desktop / 1 col mobile
+     - Cada card: glass-panel rounded-2xl con icono grande glass-circle + título
+       font-headline-md + descripción text-sm + botón CTA full-width
+     - Datos vienen de obtenerProgramasActivos() → dinámico desde backend
+     - CTA: si no hay sesión → navigate('/registro')
+            si hay sesión → formulario inline de inscripción
+            si ya está inscrito → badge "Ya inscrito" en vez de botón
+  
+  3. Sección "¿Cómo sumarte?": 3 pasos horizontales con badges numéricos
+     (Regístrate → Elige → Actívate)
+  
+  4. Sección Contacto: 3 mini-cards (0800-AMBIENTE, email, sede)
+  
+  Props que recibe de App.js: navigate, user, token, login, register, isAuthenticated
+  (el componente verifica si el usuario está autenticado leyendo user/token)
+
+C. MODIFICAR: src/App.js (3 cambios)
+─────────────────────────────────────
+  1. Nueva lazy import:
+     const Participa = React.lazy(() => import('./views/Participa/Participa'))
+
+  2. Añadir ruta en publicRoutes:
+     { path: '/participa', name: 'participa', component: Participa }
+
+  3. Añadir a publicEntryPaths:
+     const publicEntryPaths = new Set(['/inicio', '/login', '/registro', '/participa'])
+
+D. MODIFICAR: src/components/NavBarPublica.js (3 paths)
+────────────────────────────────────────────────────────
+  Desktop links (línea 73):
+    { label: 'Transparencia', path: '/inicio' }
+    → { label: 'Participa', path: '/participa' }
+
+  Mobile hamburger menu (línea 127):
+    { label: 'Transparencia', path: '/inicio', icon: 'info' }
+    → { label: 'Participa', path: '/participa', icon: 'groups' }
+
+  Mobile bottom nav (línea 8):
+    (No se modifica — ya tiene Inicio/Trámites/Denuncias/Perfil)
+
+
+================================================================================
+PARTE 3 — ERP (Ecogest ERP src/)
+================================================================================
+
+Estructura del nuevo módulo (replica patrón GestionDenuncias):
+  
+  src/views/GestionAdministrativa/Programas/
+  ├── index.js                         ← Barrel
+  ├── gestionProgramas.js              ← Componente principal (default export)
+  ├── components/
+  │   ├── ListaProgramas.js            ← Tabla de programas con filtros y acciones
+  │   ├── ProgramaForm.js              ← Modal/panel crear y editar programa
+  │   └── InscripcionesTab.js          ← Tabla de voluntarios por programa
+  ├── services/
+  │   └── programasService.js          ← CRUD /programas y /voluntarios
+  └── hooks/
+      └── useGestionProgramas.js       ← Estado global + acciones
+
+A. NUEVO: services/programasService.js
+───────────────────────────────────────
+Patrón: import { api } from '../../../../services/api'
+        const PATH = '/programas'
+        const PATH_VOL = '/voluntarios'
+
+Funciones:
+  obtenerTodos()              → GET /programas
+  crear(datos)                → POST /programas (auto-genera ID PROG-XXX)
+  actualizar(id, datos)       → PATCH /programas/:id
+  eliminar(id)                → DELETE /programas/:id
+  toggleActivo(id, activo)    → PATCH /programas/:id { activo }
+  obtenerInscripciones(programaId) → GET /voluntarios?programaId=X
+  cambiarEstadoVoluntario(id, estado) → PATCH /voluntarios/:id { estado }
+
+Export: export const programasService = { ... }; export default programasService
+
+B. NUEVO: hooks/useGestionProgramas.js
+───────────────────────────────────────
+Patrón: useRef(true) para cleanup, useCallback + useEffect para carga.
+Estado: programas[], inscripciones[], loading, error.
+Acciones: cargarProgramas, crearPrograma, actualizarPrograma, eliminarPrograma,
+          toggleActivo, cargarInscripciones, cambiarEstadoVoluntario.
+Retorna objeto plano con todo.
+
+C. NUEVO: components/ListaProgramas.js
+───────────────────────────────────────
+Tabla CoreUI CTable con columnas:
+  - Título (con badge de tipo)
+  - Tipo (guardianes/mesas_tecnicas/reforestacion/brigadas)
+  - Activo (CBadge success/danger)
+  - Inscritos (número de voluntarios)
+  - Fecha creación
+  - Acciones (toggle activo, editar, eliminar, ver inscritos)
+
+Filtros superiores: CFormSelect por tipo, campo de búsqueda por título.
+
+D. NUEVO: components/ProgramaForm.js
+─────────────────────────────────────
+Modal (CModal) con formulario:
+  - Título (CFormInput)
+  - Icono (CFormSelect con lista de Material Symbols disponibles)
+  - Tipo (CFormSelect: guardianes, mesas_tecnicas, reforestacion, brigadas)
+  - Descripción (CFormTextarea)
+  - Meta (CFormInput)
+  - Activo (CFormSwitch)
+Modo crear: todos los campos vacíos, botón "Crear Programa".
+Modo editar: campos pre-rellenados, botón "Guardar Cambios".
+
+E. NUEVO: components/InscripcionesTab.js
+─────────────────────────────────────────
+Tabla de voluntarios para un programa específico. Columnas:
+  - Nombre, Email, Teléfono, Comentario, Fecha, Estado (CBadge), Acciones.
+Acciones: Aprobar (check), Rechazar (x), Eliminar (trash).
+Badges: pendiente=warning, aprobado=success, rechazado=danger.
+
+F. NUEVO: gestionProgramas.js (componente principal)
+─────────────────────────────────────────────────────
+Arrow function, default export. Estructura:
+  - Header con título "Gestión de Programas" + botón "Nuevo Programa"
+  - CCard + CCardBody
+  - ListaProgramas (recibe programas, loading, callbacks)
+  - ProgramaForm (modal crear/editar, controlado por estado local)
+  - InscripcionesTab (modal/pestaña, se abre al click "Ver Inscritos")
+
+G. NUEVO: index.js (barrel)
+─────────────────────────────
+Re-exporta todo con nombres + default export de gestionProgramas.
+Mismo patrón que GestionDenuncias/index.js.
+
+H. MODIFICAR: src/routes.js
+─────────────────────────────
+Añadir al inicio (junto a los otros lazy imports):
+  const gestionProgramas = React.lazy(() =>
+    import('./views/GestionAdministrativa/Programas/gestionProgramas'))
+
+Añadir en el array routes (sección ADMINISTRACIÓN):
+  { path: '/gestionProgramas', name: 'Gestion de Programas', element: gestionProgramas }
+
+I. MODIFICAR: src/_nav.js
+───────────────────────────
+Añadir import de icono al inicio:
+  import { cilStar } from '@coreui/icons'
+
+Añadir en el array _nav, dentro de la sección CNavTitle "ADMINISTRACIÓN":
+  {
+    component: CNavItem,
+    name: 'Programas',
+    to: '/gestionProgramas',
+    icon: <CIcon icon={cilStar} customClassName="nav-icon" />,
+  }
+
+
+================================================================================
+PARTE 4 — Stitch Prompt (UI página pública "Participa")
+================================================================================
+
+Usar este prompt en stitch_edit_screens o stitch_generate_screen_from_text
+para el proyecto EcogestPortal (ID: 10629800455670144229):
+
+---
+
+Crea la página pública "Participa" para el portal ciudadano MINEC, visible sin 
+iniciar sesión. Mismo sistema visual que el landing page: glass-panel, 
+eco-gradient-text, fuentes Outfit/Inter, Material Symbols con soporte FILL, 
+fondo dark por defecto con light mode vía html:not(.dark). Mobile-first 
+(1 columna → grid en md+). Alto total ~6000px.
+
+SECCIÓN 1 — Header con breadcrumb:
+- "Inicio / Participa" en font-label-caps text-outline text-xs uppercase
+- Título h1: "Participa" con eco-gradient-text (gradiente #4edea3→#a4d64c)
+- Subtítulo: "Súmate a las iniciativas ecosocialistas. La protección del 
+  ambiente es tarea de todos."
+- Ícono grande: `groups` con FILL en círculo glass de 80px con gradiente 
+  radial verde y border-primary/30
+
+SECCIÓN 2 — Iniciativas (4 cards grid, 2×2 desktop → 1 col mobile):
+Cada card: glass-panel rounded-2xl p-6, hover-eco-glow, min-h-[320px].
+  - Ícono w-16 h-16 rounded-full glass-panel bg-primary/5 border-primary/20 
+    con Material Symbol FILL text-3xl text-primary
+  - Título font-headline-md text-headline-md text-on-surface
+  - Descripción text-on-surface-variant text-sm leading-relaxed
+  - Botón w-full mt-4 px-4 py-3 rounded-xl border border-primary/30 
+    font-label-caps text-primary hover:bg-primary hover:text-on-primary
+    transition-all
+
+Card 1: shield_person — "Guardianes Ambientales" — "Red de ciudadanos 
+voluntarios que monitorean y reportan incidencias ambientales en sus 
+comunidades con capacitación gratuita del MINEC." — "QUIERO SER GUARDIÁN"
+Card 2: water_drop — "Mesas Técnicas de Agua" — "Organización comunitaria 
+para la gestión y protección de fuentes hídricas. Participa en tu cuenca 
+local." — "SUMARME A UNA MESA"
+Card 3: park — "Reforestación Nacional" — "Jornadas de siembra en áreas 
+degradadas. Más de 5 millones de árboles plantados con voluntarios." — 
+"PARTICIPAR EN JORNADA"
+Card 4: local_fire_department — "Brigadas contra Incendios" — "Formación y 
+equipamiento para prevención y respuesta ante incendios forestales." — 
+"REGISTRARME COMO BRIGADISTA"
+
+SECCIÓN 3 — ¿Cómo sumarte? (3 pasos, 3 cols desktop → 1 col mobile):
+Cada paso: w-20 h-20 rounded-full glass-panel con ícono text-2xl y badge 
+numérico circular bg-primary text-on-primary posicionado -top-2 -right-2.
+Paso 1: badge "1", person_add, "Regístrate", "Crea tu cuenta gratuita."
+Paso 2: badge "2", how_to_vote, "Elige", "Selecciona tu iniciativa."
+Paso 3: badge "3", rocket_launch, "Actívate", "Recibe fechas y ubicaciones."
+Línea conectora gradiente verde (#4edea3→#bff365→#4edea3) entre pasos 
+(solo desktop, hidden en mobile).
+
+SECCIÓN 4 — Contacto (3 mini-cards grid, 3 cols → 1 col mobile):
+Card 1: call icon — "0800-AMBIENTE" — "Línea gratuita 24/7"
+Card 2: mail icon — "atencionciudadana@minec.gob.ve" — "48h hábiles"
+Card 3: map icon — "Sede Principal" — "Centro Simón Bolívar, Torre Sur, 
+  Piso 18. Caracas, Venezuela."
+
+---
+
+================================================================================
+RESUMEN DE ARCHIVOS
+================================================================================
+
+Backend (1 archivo):
+  [M] Ecogest Backend/db.json                     +2 colecciones
+
+Portal (4 archivos):
+  [N] Ecogest Portal/src/services/programasService.js
+  [N] Ecogest Portal/src/views/Participa/Participa.js
+  [M] Ecogest Portal/src/App.js                    +lazy import + ruta + path
+  [M] Ecogest Portal/src/components/NavBarPublica.js   3 paths nuevos
+
+ERP (9 archivos):
+  [N] src/views/GestionAdministrativa/Programas/index.js
+  [N] src/views/GestionAdministrativa/Programas/gestionProgramas.js
+  [N] src/views/GestionAdministrativa/Programas/services/programasService.js
+  [N] src/views/GestionAdministrativa/Programas/hooks/useGestionProgramas.js
+  [N] src/views/GestionAdministrativa/Programas/components/ListaProgramas.js
+  [N] src/views/GestionAdministrativa/Programas/components/ProgramaForm.js
+  [N] src/views/GestionAdministrativa/Programas/components/InscripcionesTab.js
+  [M] src/routes.js                                +lazy import + ruta
+  [M] src/_nav.js                                  +CNavItem con cilStar
+
+Stitch (1 prompt listo para usar)
+
+TOTAL: 15 archivos (10 nuevos, 5 modificados)
+================================================================================

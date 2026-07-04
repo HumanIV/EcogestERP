@@ -1,0 +1,189 @@
+Auditoría — GestionAdministrativa (v3)
+========================================
+Cubre: todos los componentes, hooks, servicios, utils y constantes del módulo.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+A) FUNCIONES INCORRECTAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A1. licenciasService.actualizarEstado — muta el array de instancia (no localStorage)
+Archivo: licenciasService.js:180-181
+  this.LICENCIAS_EJEMPLO[licenciaIndex].estado = nuevoEstado;
+LICENCIAS_EJEMPLO es una propiedad de clase. La mutación sobrevive solo mientras vive la instancia en memoria. Al refrescar, vuelven los datos originales. No hay ningún localStorage.setItem en este servicio.
+
+A2. licenciasService.generarRecomendacionesReporte — llama a generarResumenReporte de forma síncrona cuando es async
+Archivo: licenciasService.js:312
+  const tiempoPromedio = this.generarResumenReporte(licencias).tiempoPromedioTramitacion;
+generarResumenReporte es async (retorna Promise). Acceder a .tiempoPromedioTramitacion directamente resulta en undefined. La condición if (tiempoPromedio > 30) siempre es false.
+
+A3. InventarioModals — onAgregarActivo usa CForm onSubmit pero el botón no dispara submit
+Archivo: InventarioModals.js:168, 435
+  <CForm onSubmit={onAgregarActivo}>
+  ...
+  <CButton type="submit">Registrar Activo</CButton>
+La prop onAgregarActivo viene de Inventario.js línea 125: (e) => { agregarActivo(e); showToast(...) }
+El handler recibe el SyntheticEvent de submit, no el formData. agregarActivo espera recibir un objeto de datos, no un evento. La función procesa e.preventDefault() solo si está implementado en el handler; de lo contrario, el formulario hace submit nativo.
+
+A4. AdminPanel — cuadrillas.estado busca 'Activa' pero cuadrillaServices guarda 'activa'
+Archivo: AdminPanel.js:99-100
+  cuadrillasData.filter(c => c.estado === 'Activa')
+cuadrillaServices.js:52 guarda `estado: cuadrillaData.estado || 'activa'` (minúsculas).
+El contador de cuadrillas activas en AdminPanel siempre retorna 0.
+
+A5. useGestionDenuncias — gestionService importado pero nunca invocado
+Archivo: useGestionDenuncias.js:3
+  import { gestionService } from '../services/gestionService';
+Ninguna función del hook lo usa. Todo el módulo opera con datos hardcodeados en memoria.
+
+A6. TramitesModalForm — campo tipo deshabilitado en edición pero lo requiere la validación
+Archivo: TramitesModalForm.js:59, gestionTramites.js:109-111
+  <CFormSelect name="tipo" disabled={isEdit}>
+Al editar, el campo tipo no genera onChange. Si el formData.tipo viene vacío de algún edge case, la validación en gestionTramites.js:109 bloqueará el guardado mostrando "Seleccione un tipo" sin forma de corregirlo.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+B) FUNCIONES ROTAS O CICLO INCOMPLETO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+B1. licenciasService — no persiste en localStorage; todos los cambios de estado se pierden al refrescar
+Archivo: licenciasService.js (todo el servicio)
+actualizarEstado y asignarAnalista mutan this.LICENCIAS_EJEMPLO en memoria de instancia. No hay ningún localStorage.setItem. Al refrescar la página, los datos vuelven a los valores hardcodeados.
+
+B2. useGestionDenuncias — actualizarEstado/asignarDenuncia/resolverDenuncia solo operan en React state, sin persistencia
+Archivo: useGestionDenuncias.js:147-693
+No hay localStorage.setItem en ninguna de estas funciones. Al llamar refreshData() o recargar la página, se sobrescriben todos los cambios con datosPrueba.
+
+B3. useSolicitudActivos — aprobarSolicitud no descuenta cantidad del activo en inventarioMinisterio
+Archivo: SolicitudActivos/hooks/useSolicitudActivos.js:118-165
+Registra en inventarioMinisterio.movimientos pero nunca actualiza inventarioMinisterio.activos[].cantidad.
+
+B4. BandejaAdministrativa — handleConfirmarFirma muestra toast de éxito aunque idx === -1
+Archivo: BandejaAdministrativa.js:211-257
+Si el trámite fue eliminado desde otra pestaña, idx será -1 y no actualiza nada, pero el toast "Trámite aprobado" se muestra y el inspector queda bloqueado indefinidamente.
+
+B5. cuadrillaServices.crearCuadrilla — ID generado puede colisionar
+Archivo: cuadrillaServices.js:45-49
+  const count = cuadrillas.filter(c => c.zona === cuadrillaData.zona).length + 1;
+  id: `${zonaPrefix}-OBREROS-${String(count).padStart(3, '0')}`
+Tras eliminar una cuadrilla de esa zona y crear una nueva, count vuelve al mismo número y genera un ID ya existente. No verifica unicidad.
+
+B6. tramitesService — ID usa length+1, colisiona tras eliminar trámites
+Archivo: tramitesService.js:35
+  id: `TRM-${new Date().getFullYear()}-${String(tramites.length + 1).padStart(3, '0')}`
+
+B7. useGestionPermisos — cambios de estado se pierden al cambiar filtros
+Archivo: useGestionPermisos.js:58-107
+cargarPermisos() lee siempre desde datosPruebaPermisos hardcodeados. Es dependencia de useCallback([filtros]). Cada cambio de filtro sobreescribe los cambios de estado aplicados.
+
+B8. Inventario — refreshData no re-lee localStorage
+Archivo: useInventario.js:178-187
+Solo hace un delay de 500ms, no relee datos. Los movimientos aprobados desde SolicitudActivos no aparecen hasta page refresh.
+
+B9. useGestionLicencias y useGestionPermisos — estadísticas solo suman al cambiar estado, nunca restan
+Archivo: useGestionLicencias.js:64-67 / useGestionPermisos.js:117-121
+setEstadisticas(prev => ({ ...prev, [nuevoEstado]: (prev[nuevoEstado] || 0) + 1 }))
+El estado anterior nunca se decrementa. Cada cambio infla los contadores.
+
+B10. BandejaAdministrativa — estado "Solicitudes de Activos" duplicado con SolicitudActivos.js
+Archivo: BandejaAdministrativa.js:48, SolicitudActivos.js
+Dos instancias separadas de useSolicitudActivos. Aprobar desde Bandeja no actualiza la vista de SolicitudActivos.js (y viceversa). Solo se sincronizan tras un remount.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+C) LÓGICA ROTA O MEJORABLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+C1. InventarioModals — código autogenerado de activo usa activos.length+1 vulnerable a colisión
+Archivo: InventarioModals.js:183
+  `MINECO-${categoria}-${String(activos.length + 1).padStart(3, '0')}`
+Colisiona si se elimina un activo y se crea uno nuevo.
+
+C2. CuadrillasModalSolicitarActivo — muestra opciones mock hardcodeadas cuando activos está vacío
+Archivo: CuadrillasModalSolicitarActivo.js:114-120
+Si el inventario no tiene activos cargados, muestra 3 opciones falsas (Taladro Industrial, Camioneta Toyota, Kit de Herramientas). Si el usuario selecciona una y envía, la solicitud lleva activoId='mock-1' que no existe en el inventario real.
+
+C3. CuadrillasModalForm — nombreGenerado en el badge del título se calcula con integrantes.length+1 (incorrecto)
+Archivo: CuadrillasModalForm.js:48
+  `${zona}-${tipo}-${String((formData.integrantes?.length || 0) + 1).padStart(3, '0')}`
+El badge muestra un nombre tentativo que nunca coincide con el nombre real generado en cuadrillas.js:203-209 (que usa un do-while buscando unicidad). El usuario ve un nombre en el modal que no será el nombre real de la cuadrilla creada.
+
+C4. Persistencia condicional — borrar todos los items los resucita al recargar
+Archivos:
+- useProveedores.js:42-46: if (proveedores.length > 0) localStorage.setItem(...)
+- useSolicitudActivos.js:61-65: mismo patrón
+- useInventario.js:109-113: mismo patrón
+Al borrar el último registro, localStorage no se actualiza. Al recargar, los registros vuelven.
+
+C5. Inventario.js — toast de éxito se muestra antes de validar agregarActivo
+Archivo: Inventario.js:125-128
+  onAgregarActivo={(e) => { agregarActivo(e); showToast('Activo registrado exitosamente', 'success') }}
+Toast siempre se muestra aunque agregarActivo aborte por validación interna.
+
+C6. useGestionDenuncias — estadísticas recalculadas con setTimeout(0) anti-patrón
+Archivo: useGestionDenuncias.js:171-188, 223-240, 670-687
+setEstadisticas se llama dentro de un setTimeout(0) que a su vez hace setDenuncias(current => {...; return current}). El patrón "setState que retorna el mismo state para leer current" es un anti-patrón; se debe usar un useEffect con dependencia en denuncias.
+
+C7. cuadrillas.js — equiposSolicitados con dependencia falsa [cuadrillas]
+Archivo: cuadrillas.js:111-118
+useMemo lee localStorage 'solicitudesActivos' pero su dependencia es cuadrillas. Solo se actualiza cuando cambian las cuadrillas, no cuando llegan nuevas solicitudes.
+
+C8. useGestionTramites — asignarInspector dispara cargarTramites dos veces
+Archivo: useGestionTramites.js:86-100
+Llama actualizarTramite + cambiarEstado, y cambiarEstado ya llama cargarTramites. Resultado: doble fetch y el data retornado es del primer update, no del estado final.
+
+C9. AdminPanel — datosRecientes es hardcodeado con fechas fijas de 2026
+Archivo: AdminPanel.js:117-246
+useMemo sobre array literal con fechas fijas; no lee datos reales de ningún módulo.
+
+C10. console.log de debug en producción
+Archivos:
+- useGestionDenuncias.js: líneas 259, 325, 480, 481, 488, 547 (con emoji)
+- cuadrillaServices.js:15 (catch)
+- licenciasService.js:117, 154, 199, 232, 266
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+D) VALIDACIONES DE FORMULARIOS ROTAS/INEXISTENTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+D1. TramitesModalForm — botón Guardar deshabilitado solo revisa 3 de 6+ campos obligatorios
+Archivo: TramitesModalForm.js:212
+  disabled={!formData.solicitante || !formData.cedulaRif || !formData.subtipo}
+No bloquea si faltan tipo (aunque el campo exista), municipio, descripcion. El usuario puede pulsar Guardar con formulario incompleto si tiene esos 3 campos llenos.
+
+D2. GestionTramites — validación de cédula/RIF acepta secuencias de 5 dígitos
+Archivo: gestionTramites.js:121-127
+  /^[VJEG]\d{5,10}$/
+Acepta V12345 (5 dígitos), que no es una cédula venezolana válida (mínimo 6). No valida que la fecha no sea futura.
+
+D3. SolicitudActivos — cantidad no validada en JS, solo HTML min="1"
+Archivo: SolicitudActivos.js:153-158
+Cantidad omitida en la validación JS. Por devtools se puede enviar 0 o negativo.
+Tampoco impide aprobar solicitudes que ya están en estado Aprobado/Rechazado.
+
+D4. InventarioModals (movimiento) — validarMovimiento no valida que cantidad no supere el stock disponible
+Archivo: InventarioModals.js:86-121
+Valida tipo, activoId, motivo y ubicacionDestino. No verifica si la cantidad solicitada es mayor al stock (activoSeleccionado.cantidad). Se puede crear un movimiento de 999 unidades sobre un activo con 2.
+
+D5. Proveedores — RIF permite duplicados; regex no cubre dígito verificador variable
+Archivo: useProveedores.js:132
+  /^[JGVEPjgvep]-\d{6,9}-\d$/
+Acepta J-123456-0 a J-123456789-9. No verifica unicidad de RIF entre proveedores.
+
+D6. GestionLicencias — handleEstadoChange y handleAsignar omiten showToast de dependencias
+Archivo: gestionLicencias.js:85-111
+useCallback(() => {...showToast...}, [actualizarEstadoLicencia, modalDetalleVisible])
+showToast no incluido. React Hooks eslint lo reporta. Posible closure stale si useToast es reinstanciado.
+
+D7. GestionPermisos — mismo problema de dependencias
+Archivo: gestionPermisos.js:85-111
+Idéntico al D6. showToast y handleAsignar omiten showToast del array de dependencias.
+
+D8. useGestionTramites — filtro por fecha (filtros.fecha) ignorado en el hook
+Archivo: useGestionTramites.js:132-146
+El input de fecha en gestionTramites.js:337 tiene binding correcto, pero el hook filtra solo por tipo, estado y busqueda. filtros.fecha nunca se aplica.
+
+D9. CuadrillasModalSolicitarActivo — cantidad no valida máximo (sin stock check)
+Archivo: CuadrillasModalSolicitarActivo.js:130-136
+type="number" min="1" sin max. Se puede solicitar 9999 unidades de un activo con stock 1. El modal no tiene acceso a la cantidad disponible del activo seleccionado.
+
+D10. InventarioModals — código autogenerado del activo (campo Código) permite edición libre pero sin validar formato
+Archivo: InventarioModals.js:183-187
+El campo muestra un código autogenerado como valor inicial pero es editable. No hay validación de formato (se puede guardar "abc" como código). No valida unicidad del código contra activos existentes.

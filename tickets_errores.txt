@@ -1,0 +1,178 @@
+================================================================================
+TICKETS DE ERRORES VISUALES - SOLARCTEC v1.1
+Archivo origen: analisis_estetico_visual.txt
+Fecha: 2026-05-05
+================================================================================
+
+================================================================================
+ÁREA: HEADER Y NAVEGACIÓN PRINCIPAL     Completado
+================================================================================
+| Área Afectada         | Cat | Problema Visual                                   | Recomendación de Diseño                                | Prioridad |
+|-----------------------|-----|---------------------------------------------------|--------------------------------------------------------|-----------|
+| src/components/AppHeader.js | A   | Estilos inline mezclados con CSS                 | Unificar en archivo SCSS dedicado                    | MEDIA     |
+| src/components/AppHeader.js | C   | Botones de tema (dark/light) descentrados        | Centrar dropdown, mantener consistencia vertical     | BAJA      |
+| src/components/AppHeader.js | D   | Icono de tema pequeño en móviles                 | Aumentar área clickeable, mínimo 44x44px            | MEDIA     |
+| src/components/AppSidebar.js | B   | Backdrop oscuro bloquea contenido                | Reducir opacidad a 0.3, añadir animación fade      | MEDIA     |
+| src/components/AppSidebar.js | C   | Logo no se adapta al estado collapsed            | Diseño responsive para logo en sidebar contraído     | MEDIA     |
+| src/components/AppSidebar.js | D   | Texto "ECOGEST" ilegible en modo contraído       | Icono alternativo o tooltip en hover                 | BAJA      |
+
+================================================================================
+ÁREA: PÁGINA DE LOGIN Y AUTENTICACIÓN Completado
+================================================================================
+| Área Afectada         | Cat | Problema Visual                                   | Recomendación de Diseño                                | Prioridad |
+|-----------------------|-----|---------------------------------------------------|--------------------------------------------------------|-----------|
+| src/views/pages/login/Login.js | A   | Logos de diferentes tamaños visualmente         | Equalizar dimensiones, usar mismo contenedor        | MEDIA     |
+| src/views/pages/login/Login.js | B   | Botón "Login" sin feedback visual               | Añadir hover state y loading spinner                | ALTA      |
+| src/views/pages/login/Login.js | C   | Formulario no responsivo en móviles             | Ajustar ancho máximo en media queries               | ALTA      |
+| src/views/pages/login/Login.js | D   | Falta icono visual de "olvidé contraseña"       | Añadir link con icono debajo del formulario         | BAJA      |
+| src/views/pages/login/Login.js | B   | Input de contraseña sin icono de visibilidad   | Añadir toggle show/hide password                   | MEDIA     |
+
+================================================================================
+ÁREA: MÓDULO DE PERMISOS (USUARIOS) 
+================================================================================
+| Área Afectada         | Cat | Problema Visual                                   | Recomendación de Diseño                                | Prioridad |
+|-----------------------|-----|---------------------------------------------------|--------------------------------------------------------|-----------|
+| src/views/usuarios/permisos/permisos.js | A   | KPIs con valores null muestran "0"              | Usar skeleton loader o indicador "sin datos"        | ALTA      |
+| src/views/usuarios/permisos/permisos.js | B   | Botones de filtro activos sin distinción clara  | Aumentar contraste, añadir indicador visual active | MEDIA     |
+| src/views/usuarios/permisos/permisos.js | B   | Tabla sin estados vacíos amigables              | Diseño especial para "sin permisos"                 | ALTA      |
+| src/views/usuarios/permisos/permisos.js | C   | Tarjetas KPI no se apilan en mobile             | Grid responsivo: 2x2 en móvil, 4x1 en desktop      | MEDIA     |
+| src/views/usuarios/permisos/permisos.js | A   | Colores de badges inconsistentes con tema      | Estandarizar paleta de estados según guía eco       | MEDIA     |
+| src/views/usuarios/permisos/components/permisosFormulario.js | A   | Formulario enorm (1063 líneas)                  | Dividir en pasos/wizard con progress indicator      | ALTA      |
+| src/views/usuarios/permisos/components/permisosFormulario.js | B   | Campos sin labels claros o help text            | Añadir tooltips y placeholders descriptivos         | ALTA      |
+| src/views/usuarios/permisos/components/permisosFormulario.js | D   | Validaciones visuales rojas aggressivas        | Usar colores suaves, errores inline sutiles        | MEDIA     |
+| src/views/usuarios/permisos/components/permisosFormulario.js | C   | Campos muy juntos sin suficiente spacing        | Aumentar gap entre campos, mejor organización     | MEDIA     |
+| src/views/usuarios/permisos/components/permisosTabla.js | B   | Tabla muy compacta, difícil de leer            | Añadir padding rows, alternar colores               | MEDIA     |
+
+================================================================================
+ÁREA: MÓDULO DE LICENCIAS (USUARIOS)
+================================================================================
+| Área Afectada         | Cat | Problema Visual                                   | Recomendación de Diseño                                | Prioridad |
+|-----------------------|-----|---------------------------------------------------|--------------------------------------------------------|-----------|
+| src/views/usuarios/licencias/licencia.js | A   | Stats muestran undefined/error visual           | Validar datos antes de renderizar KPIs              | ALTA      |
+| src/views/usuarios/licencias/licencia.js | B   | Filtros de tabs desproporcionados               | Consistencia con permisos, igualar tamaño botones   | MEDIA     |
+| src/views/usuarios/licencias/licencia.js | B   | Estado vacío sin illustación                    | Añadir ilustración eco-friendly + mensaje claro     | ALTA      |
+| src/views/usuarios/licencias/licencia.js | C   | Cards no tienen sombra consistente              | Estandarizar sombras según sistema de diseño       | BAJA      |
+| src/views/usuarios/licencias/licencia.js | A   | Footer de tarjeta con información redundant     | Simplificar, solo ícono + texto breve              | BAJA      |
+| src/views/usuarios/licencias/components/licenciasFormulario.js | B   | Formularios muy largos sin organización         | Estructura en secciones colapsables                 | ALTA      |
+| src/views/usuarios/licencias/components/licenciasTabla.js | B   | Tabla de licencias sin filtros visuales        | Añadir header de filtros sticky                     | MEDIA     |
+
+================================================================================
+ÁREA: PERFIL DE USUARIO
+================================================================================
+| Área Afectada         | Cat | Problema Visual                                   | Recomendación de Diseño                                | Prioridad |
+|-----------------------|-----|---------------------------------------------------|--------------------------------------------------------|-----------|
+| src/views/usuarios/perfilUsers/perfilUsers.js | A   | Avatar con borde inconsistente                   | Usar border-radius cohérente con tema               | BAJA      |
+| src/views/usuarios/perfilUsers/perfilUsers.js | B   | Modal de contraseña mal centrado                 | Centrar modal, mantener proporciones                | MEDIA     |
+| src/views/usuarios/perfilUsers/perfilUsers.js | C   | Formulario de edición muy extenso               | Organizar en tabs o accordion                       | MEDIA     |
+| src/views/usuarios/perfilUsers/perfilUsers.js | D   | Modal no cierra al hacer click fuera            | Añadir backdrop clickeable, cerrar automático       | ALTA      |
+| src/views/usuarios/perfilUsers/perfilUsers.js | A   | Gradientes en iconos no cohesivos               | Unificar paleta de gradientes                       | BAJA      |
+| src/views/usuarios/perfilUsers/perfilUsers.js | B   | Botones de acción sin separación clara         | Aumentar spacing entre acciones                     | BAJA      |
+
+================================================================================
+ÁREA: GESTIÓN ADMINISTRATIVA - INVENTARIO
+================================================================================
+| Área Afectada         | Cat | Problema Visual                                   | Recomendación de Diseño                                | Prioridad |
+|-----------------------|-----|---------------------------------------------------|--------------------------------------------------------|-----------|
+| src/views/GestionAdministrativa/Inventario/Inventario.js | A   | Uso excesivo de estilos inline (anti-patrón)    | Migrar todo a clases CSS/SCSS                        | ALTA      |
+| src/views/GestionAdministrativa/Inventario/Inventario.js | B   | Alertas visuales muy agresivas                  | Suavizar colores, mejor jerarquía visual          | MEDIA     |
+| src/views/GestionAdministrativa/Inventario/Inventario.js | C   | Tabs de navegación muy pequenos                 | Aumentar tamaño clickeable, mejor spacing          | MEDIA     |
+| src/views/GestionAdministrativa/Inventario/Inventario.js | B   | Tabla de activos muy wide, overflow horizontal | Implementar sticky columns, scroll horizontal       | ALTA      |
+| src/views/GestionAdministrativa/Inventario/Inventario.js | A   | Colores de badges no siguen el tema eco         | Estandarizar: éxito=verde eco, warning=ámbar        | MEDIA     |
+| src/views/GestionAdministrativa/Inventario/Inventario.js | D   | Iconos de acciones muy pequeños                 | Aumentar tamaño, añadir hover state claro           | MEDIA     |
+| src/views/GestionAdministrativa/Inventario/Inventario.js | B   | Modales muy largos sin scroll                   | Añadir scroll interno, header fixed                | ALTA      |
+
+================================================================================
+ÁREA: GESTIÓN ADMINISTRATIVA - PLANIFICACIÓN
+================================================================================
+| Área Afectada         | Cat | Problema Visual                                   | Recomendación de Diseño                                | Prioridad |
+|-----------------------|-----|---------------------------------------------------|--------------------------------------------------------|-----------|
+| src/views/GestionAdministrativa/Planificacion/Planificacion.js | A   | Módulo enorme (2369 líneas) - caos visual       | Dividir en sub-vistas con tabs claros               | ALTA      |
+| src/views/GestionAdministrativa/Planificacion/Planificacion.js | C   | Gráficos overwhelmeantes por cantidad           | Priorizar dashboard con KPIs principales            | ALTA      |
+| src/views/GestionAdministrativa/Planificacion/Planificacion.js | B   | Formularios de ajustes muy complejos            | Simplificar, usar step-by-step form                | MEDIA     |
+| src/views/GestionAdministrativa/Planificacion/Planificacion.js | A   | Colores de balances (rojo/verde) no claros      | Leyenda visual clara, evitar confusión             | MEDIA     |
+| src/views/GestionAdministrativa/Planificacion/Planificacion.js | D   | Números muy pequeños en tablas                  | Aumentar font-size, usar font-weight para totales  | MEDIA     |
+
+================================================================================
+ÁREA: GESTIÓN ADMINISTRATIVA - ADMINISTRACIÓN FINANCIERA
+================================================================================
+| Área Afectada         | Cat | Problema Visual                                   | Recomendación de Diseño                                | Prioridad |
+|-----------------------|-----|---------------------------------------------------|--------------------------------------------------------|-----------|
+| src/views/GestionAdministrativa/AdministracionFinanciera/AdministracionFinanciera.js | B   | Demasiados datos en una vista                    | Separar en tabs con secciones claras                | ALTA      |
+| src/views/GestionAdministrativa/AdministracionFinanciera/AdministracionFinanciera.js | C   | Grids de presupuestos confusos                  | Visual más claro, usar barras de progreso          | MEDIA     |
+| src/views/GestionAdministrativa/AdministracionFinanciera/AdministracionFinanciera.js | A   | Colores financieros no estándar                  | Usar verde=ingreso, rojo=gasto, azul=balance       | MEDIA     |
+
+================================================================================
+ÁREA: RRHH - PANEL Y EMPLEADOS
+================================================================================
+| Área Afectada         | Cat | Problema Visual                                   | Recomendación de Diseño                                | Prioridad |
+|-----------------------|-----|---------------------------------------------------|--------------------------------------------------------|-----------|
+| src/views/RRHH/PanelRRHH.js | A   | Panel sobrecargado de información                 | Simplificar dashboard, priorizar KPIs               | ALTA      |
+| src/views/RRHH/PanelRRHH.js | C   | Widgets de estadísticas desproporcionados       | Grid consistente, mismos tamaños                    | MEDIA     |
+| src/views/RRHH/Empleados/listEmpleados.js | A   | Tabla muy larga (1248 líneas) - overwhelme       | Implementar paginación visual clara                 | ALTA      |
+| src/views/RRHH/Empleados/listEmpleados.js | B   | Avatar de empleado muy pequeño                    | Aumentar size, añadir iniciales si no hay imagen    | MEDIA     |
+| src/views/RRHH/Empleados/listEmpleados.js | D   | Sin feedback de carga en búsquedas              | Añadir skeleton o spinner                            | MEDIA     |
+| src/views/RRHH/Empleados/listEmpleados.js | B   | Filters muy escondidos, poco visibles            | Hacer filtros más prominentes, sticky header        | ALTA      |
+
+================================================================================
+ÁREA: GESTIÓN DE DENUNCIAS Y LICENCIAS (ADMIN)
+================================================================================
+| Área Afectada         | Cat | Problema Visual                                   | Recomendación de Diseño                                | Prioridad |
+|-----------------------|-----|---------------------------------------------------|--------------------------------------------------------|-----------|
+| src/views/GestionAdministrativa/GestionDenuncias/gestionDenuncias.js | B   | Mapas muy grandes, desplazan contenido           | Permitir collapse del mapa, más espacio tabla       | MEDIA     |
+| src/views/GestionAdministrativa/GestionDenuncias/gestionDenuncias.js | C   | Tabs muy juntos sin diferenciación               | Mayor spacing, indicadores activos claros         | MEDIA     |
+| src/views/GestionAdministrativa/GestionLicencias/gestionLicencias.js | B   | Dashboard con demasiados gráficos                 | Reducir a 4-6 métricas principales                 | ALTA      |
+| src/views/GestionAdministrativa/GestionLicencias/gestionLicencias.js | B   | console.log visible en UI (error de debug)       | Eliminar completamente                              | ALTA      |
+
+================================================================================
+ÁREA: COMPONENTES COMPARTIDOS (TOAST, MODALES)
+================================================================================
+| Área Afectada         | Cat | Problema Visual                                   | Recomendación de Diseño                                | Prioridad |
+|-----------------------|-----|---------------------------------------------------|--------------------------------------------------------|-----------|
+| src/views/usuarios/_shared/useToast.js | D   | Toast puede acumularse sin límite                | Máximo 3 toasts simultáneos, auto-dismiss           | MEDIA     |
+| src/views/usuarios/_shared/useConfirmModal.js | B   | Modal muy básico, sin diseño consistente         | Unificar estilo con otros modales del sistema      | MEDIA     |
+| src/views/usuarios/_shared/useConfirmModal.js | D   | No hay feedback visual de loading                | Añadir spinner en botón confirmar durante acción    | MEDIA     |
+| src/views/usuarios/_shared/validation.js | D   | Mensajes de error muy agresivos                  | Rediseñar con iconos, colores suaves, mejorable     | MEDIA     |
+
+================================================================================
+RESUMEN POR PRIORIDAD:
+================================================================================
+
+=== PRIORIDAD ALTA (18 items) ===
+1.  src/views/pages/login/Login.js - Botón "Login" sin feedback visual
+2.  src/views/pages/login/Login.js - Formulario no responsivo en móviles
+3.  src/views/usuarios/permisos/permisos.js - KPIs muestran null/0
+4.  src/views/usuarios/permisos/permisos.js - Tabla sin estados vacíos
+5.  src/views/usuarios/permisos/components/permisosFormulario.js - Formulario muy largo
+6.  src/views/usuarios/permisos/components/permisosFormulario.js - Campos sin labels
+7.  src/views/usuarios/licencias/licencia.js - Stats muestran undefined
+8.  src/views/usuarios/licencias/licencia.js - Estado vacío sin ilustración
+9.  src/views/usuarios/perfilUsers/perfilUsers.js - Modal no cierra al hacer click fuera
+10. src/views/GestionAdministrativa/Inventario/Inventario.js - Estilos inline excesivos
+11. src/views/GestionAdministrativa/Inventario/Inventario.js - Tabla con overflow horizontal
+12. src/views/GestionAdministrativa/Inventario/Inventario.js - Modales muy largos
+13. src/views/RRHH/PanelRRHH.js - Panel sobrecargado
+14. src/views/RRHH/Empleados/listEmpleados.js - Tabla sin paginación visual
+15. src/views/RRHH/Empleados/listEmpleados.js - Filtros poco visibles
+16. src/views/GestionAdministrativa/Planificacion/Planificacion.js - Módulo muy cargado
+17. src/views/GestionAdministrativa/Planificacion/Planificacion.js - Demasiados gráficos
+18. src/views/GestionAdministrativa/AdministracionFinanciera/AdministracionFinanciera.js - Demasiados datos
+19. src/views/GestionAdministrativa/GestionLicencias/gestionLicencias.js - console.log visible
+20. src/views/GestionAdministrativa/GestionLicencias/gestionLicencias.js - Dashboard con demasiados gráficos
+
+=== PRIORIDAD MEDIA (22 items) ===
+- Problemas de consistencia de colores y badges
+- Spacing y padding inconsistente
+- Tamaño de iconos variables
+- Responsive design incompleto
+- Feedback de carga ausente
+- Modales desalineados
+
+=== PRIORIDAD BAJA (12 items) ===
+- Detalles menores de tipografía
+- Gradientes inconsistentes
+- Bordes y radius no uniformes
+
+================================================================================
+Total: 52 tickets de errores visuales
+Prioridad Alta: 20 | Prioridad Media: 22 | Prioridad Baja: 10
+================================================================================

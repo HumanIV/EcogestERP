@@ -1,0 +1,769 @@
+================================================================================
+  ECOGEST — PLAN DE MIGRACIÓN ERP → PORTAL CIUDADANO
+  Formularios: Trámites + Denuncias (con mapa Leaflet incluido)
+  Fecha: 27/06/2026
+================================================================================
+
+RESUMEN
+───────
+Migrar toda la funcionalidad rica de los formularios ciudadanos del ERP
+(src/views/usuarios/MisTramites + src/views/usuarios/denuncias/) hacia el
+Portal Ciudadano (Ecogest Portal/src/views/Tramites + Denuncias/),
+adaptando de CoreUI a Tailwind CSS + Material Symbols, y manteniendo la
+misma lógica de negocio.
+
+Los servicios del Portal (tramitesService.js, denunciasService.js) YA
+soportan todas las operaciones necesarias (crear, listar, filtrar,
+cambiar estado, estadísticas). No hay que tocarlos.
+
+Los archivos estáticos del Portal que YA tenemos y se reutilizan:
+  - Ecogest Portal/src/utils/venezuelaGeo.js  (estados, municipios, parroquias)
+  - Ecogest Portal/src/utils/validation.js     (validaciones por campo)
+  - Ecogest Portal/src/components/FormInput.js (input con icono + label)
+
+================================================================================
+  PARTE 0 — INFRAESTRUCTURA COMPARTIDA
+================================================================================
+
+[0.1] Crear hooks/useToast.js
+───────────────────────────────
+  Ruta: Ecogest Portal/src/hooks/useToast.js
+  Basado en: src/views/usuarios/_shared/useToast.js (ERP)
+
+  API:
+    const { showToast, ToastContainer } = useToast()
+
+    showToast(message, type, duration)
+      - message: string
+      - type: 'success' | 'error' | 'warning' | 'info'
+      - duration: ms (default 4000)
+
+  Renderiza un contenedor fixed en la esquina inferior-derecha con
+  animación slide-in. Tailwind classes: fixed, z-50, bottom-6, right-6.
+  Cada toast es un div glass-panel con icono Material Symbols + texto.
+  Auto-dismiss con setTimeout.
+
+[0.2] Crear hooks/useConfirmModal.js
+─────────────────────────────────────
+  Ruta: Ecogest Portal/src/hooks/useConfirmModal.js
+  Basado en: src/views/usuarios/_shared/useConfirmModal.js (ERP)
+
+  API:
+    const { confirm, ConfirmModal } = useConfirmModal()
+
+    const ok = await confirm(title, message, opts)
+      - title: string
+      - message: string  
+      - opts: { confirmLabel, variant }
+      - devuelve: true si confirmó, false si canceló
+
+  Renderiza un modal centrado con backdrop blur. Tailwind:
+  fixed inset-0 z-50, flex items-center justify-center,
+  glass-panel con título, mensaje, botones Cancelar/Confirmar.
+
+[0.3] Crear utils/sanitizeText.js (o agregar a validation.js)
+───────────────────────────────────────────────────────────────
+  Ruta: Ecogest Portal/src/utils/validation.js (agregar al final)
+  Basado en: src/views/usuarios/_shared/validation.js (ERP, línea 19-27)
+
+  Función: sanitizeText(value)
+    - trim()
+    - strip HTML tags: replace(/<[^>]*>/g, '')
+    - strip javascript: protocol
+    - strip event handlers (onclick, etc.)
+    - strip remaining angle brackets
+
+  Usar en TODOS los inputs de texto de ambos formularios (títulos,
+  descripciones, nombres, direcciones).
+
+[0.4] Crear hooks/useForm.js
+──────────────────────────────
+  Ruta: Ecogest Portal/src/hooks/useForm.js
+  Basado en: src/views/usuarios/denuncias/hooks/useForm.js (ERP)
+
+  API:
+    const {
+      form, errors, touched,
+      handleChange, handleBlur, resetForm,
+      setFieldValue, setFormData, setErrors
+    } = useForm(initialState)
+
+  handleChange(e):
+    - Extrae name, value, type, checked del evento
+    - Para checkboxes usa checked en vez de value
+    - Actualiza form y marca touched
+    - Limpia error si existía
+
+  Esto reemplaza los useState manuales en NuevoTramite.js y
+  NuevaDenuncia.js, reduciendo boilerplate.
+
+[0.5] Agregar validación de archivos a validation.js
+──────────────────────────────────────────────────────
+  Basado en: src/views/usuarios/_shared/validation.js (ERP, líneas 234-306)
+
+  Exportar:
+    export const ALLOWED_FILE_TYPES_DENUNCIA = [
+      'image/jpeg', 'image/png', 'image/gif',
+      'application/pdf', 'video/mp4'
+    ]
+    export const ALLOWED_FILE_TYPES_TRAMITE = ['application/pdf']
+    export const MAX_FILE_SIZE = 10 * 1024 * 1024  (10 MB)
+    export const MAX_FILE_COUNT_DENUNCIA = 5
+    export const MAX_FILE_COUNT_TRAMITE = 10
+
+    validateFiles(files, existingFiles, opts):
+      - Chequea duplicados (por nombre)
+      - Chequea tipo MIME contra allowedTypes
+      - Chequea tamaño contra maxSize
+      - Chequea cantidad contra maxCount
+      - Devuelve { isValid, validFiles, errors, errorMessage }
+
+
+================================================================================
+  PARTE 1 — TRÁMITES (PERMISOS Y LICENCIAS)
+  Archivos a modificar/crear:
+    Ecogest Portal/src/views/Tramites/Tramites.js      (reescribir)
+    Ecogest Portal/src/views/Tramites/NuevoTramite.js  (reescribir)
+================================================================================
+
+[1.1] Unificar subtipos de trámites con el ERP
+─────────────────────────────────────────────────
+  Crear/actualizar constantes en NuevoTramite.js (o en un archivo aparte):
+
+  SUBTIPOS_PERMISO: ERP usa → ['Forestal', 'Hidrico', 'Manejo de Residuos',
+    'Emisiones Atmosfericas', 'Construccion', 'Uso de Suelo']
+  SUBTIPOS_LICENCIA: ERP usa → ['Operacion', 'Construccion', 'Modificacion',
+    'Renovacion', 'Ampliacion']
+
+  ADOPTAR los del ERP (son más completos).
+
+[1.2] Rewrite: Tramites.js (lista de trámites)
+─────────────────────────────────────────────────
+  Estado actual: lista simple de cards con estado badge.
+  Estado objetivo: dashboard con KPI + filtros + cards con acciones.
+
+  SECCIÓN A — KPI Strip (4 tarjetas):
+    ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+    │  12 Total    │ │  3 Aprobados │ │  7 En Rev.   │ │  2 Rechaz.   │
+    │   icon:task  │ │ icon:check   │ │  icon:clock  │ │  icon:x      │
+    └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
+    
+    Layout: grid grid-cols-2 md:grid-cols-4 gap-4
+    Cada tarjeta: glass-panel rounded-xl p-4, flex items-center gap-3,
+    icono en círculo con bg-primary/10, número grande + label pequeño.
+    
+    Fuente de datos: tramitesService.obtenerEstadisticas()
+    Ya devuelve { total, aprobados, pendientes, rechazados }
+
+  SECCIÓN B — Filtro pills:
+    ┌──────────┐ ┌──────────────┐ ┌────────────┐ ┌────────────┐
+    │  Todos   │ │  En Revisión │ │  Aprobados │ │ Rechazados │
+    └──────────┘ └──────────────┘ └────────────┘ └────────────┘
+    
+    Botones glass-panel con estado activo/inactivo.
+    Estados: 'todos', 'REVISION', 'INSPECCION', 'APROBADO', 'RECHAZADO'.
+    Al hacer click, filtrar la lista localmente (sin recargar datos).
+
+  SECCIÓN C — Cards de trámites:
+    Ya existen. Mejorar con:
+    - Dropdown de acciones (⋮) en esquina superior derecha con:
+        · Ver detalle
+        · Cancelar (solo si estado es BORRADOR o REVISION)
+    - Badge tipo: "Permiso" (verde) o "Licencia" (azul) con icono
+    - Inspector asignado (si tiene)
+
+  SECCIÓN D — Modal de detalle (nuevo componente: TramiteDetalleModal):
+    Al hacer click en "Ver detalle", mostrar modal con toda la info:
+    - ID, tipo, subtipo, estado (badge)
+    - Solicitante, cédula/RIF
+    - Dirección, municipio, estado geográfico
+    - Teléfono, email
+    - Descripción
+    - Inspector asignado (con avatar letra inicial)
+    - Fechas (solicitud, revisión, inspección, aprobación)
+    - Observaciones (si existen)
+    - HISTORIAL DE ESTADOS: timeline visual con iconos check-circle
+      conectados por línea vertical, mostrando estado, fecha, usuario y nota.
+
+    Estructura del historial (viene de tramite.historial):
+      [
+        { estado: 'REVISION', fecha: '2026-05-01T10:30:00', usuario: 'Sistema', nota: 'Solicitud recibida' },
+        { estado: 'INSPECCION', fecha: '2026-05-03T14:00:00', usuario: 'Inspector Pérez', nota: 'Inspección programada' },
+        ...
+      ]
+
+    Diseño Tailwind del modal:
+      - fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm
+      - glass-panel max-w-2xl w-full mx-4 max-h-[85vh] overflow-y-auto rounded-2xl p-6
+      - Botón cerrar (X) en esquina superior derecha
+      - Timeline: flex flex-col con items, cada item = flex gap-4,
+        círculo + línea vertical + contenido
+
+  SECCIÓN E — Empty state:
+    Si no hay trámites:
+      - Icono grande opacity-50
+      - "No tienes trámites registrados"
+      - Botón CTA "Crear mi primer trámite" → navigate('/tramites/nuevo')
+
+  SECCIÓN F — Cancelar trámite:
+    Al hacer click en "Cancelar" desde el dropdown:
+    - useConfirmModal para confirmar
+    - Llamar a tramitesService.cambiarEstado(id, 'RECHAZADO', { usuario, nota: 'Cancelado por el solicitante' })
+    - Recargar lista y mostrar toast success
+
+[1.3] Rewrite: NuevoTramite.js (formulario de creación)
+───────────────────────────────────────────────────────────
+  Estado actual: formulario plano con inputs básicos.
+  Estado objetivo: wizard de 3 pasos + upload de PDF + validación completa.
+
+  SECCIÓN A — Estructura de 3 pasos con progress bar:
+    ┌──────────────────────────────────────────────────────────────┐
+    │  ●━━━━━━━━━●━━━━━━━━━○                                       │
+    │  Paso 1       Paso 2       Paso 3                            │
+    │  Datos        Ubicación    Descripción y Docs                │
+    └──────────────────────────────────────────────────────────────┘
+
+    Estado React: activeStep (0, 1, 2)
+    Progress bar: div h-1.5 bg-surface-container-high rounded-full,
+    con div interno bg-primary que crece con el step actual.
+
+    Botones de navegación:
+    - Paso 0: solo "Siguiente →" (requiere validación del paso actual)
+    - Paso 1: "← Atrás" + "Siguiente →"
+    - Paso 2: "← Atrás" + "Enviar Trámite" (submit)
+
+  SECCIÓN B — Paso 1: Datos del solicitante
+    ┌─────────────────────────────────────────────────────┐
+    │ Tipo de trámite: [Permiso Ambiental ▾]              │
+    │ Subtipo:          [Seleccionar... ▾]                │
+    │ Solicitante:      [________________]  (12/30)       │
+    │ Cédula / RIF:     [V▾] - [12345678____]            │
+    │                   [✓ Cédula detectado]              │
+    │ Teléfono:         [04161234567_______]              │
+    │ Email:            [correo@ejemplo.com__]            │
+    └─────────────────────────────────────────────────────┘
+
+    Componentes clave:
+    
+    a) Tipo + Subtipo: dos selects en grid de 2 columnas.
+       Cuando cambia tipo, se resetea subtipo y se actualiza la
+       lista de subtipos disponibles.
+
+    b) Cédula/RIF: MISMO patrón que ya hicimos en Registro.js:
+       - Select pequeño V/E/J/G/P a la izquierda
+       - Input de solo dígitos a la derecha
+       - Badge de auto-detección debajo:
+           Si empieza con J/G → "RIF detectado" (color warning)
+           Si empieza con V/E y tiene 6-8 dígitos → "Cédula detectado" (color info)
+           Si incompleto → "Formato incompleto" (color danger)
+
+    c) Solicitante: input con contador de caracteres (X/30)
+    d) Teléfono: input con filtro solo dígitos (máx 11)
+    e) Email: input type="email"
+
+  SECCIÓN C — Paso 2: Ubicación
+    ┌─────────────────────────────────────────────┐
+    │ Dirección:    [Av. Principal, Edif. X______] │
+    │ Estado:       [Distrito Capital ▾]           │
+    │ Municipio:    [Libertador ▾]                 │
+    └─────────────────────────────────────────────┘
+
+    - Dirección: input normal (min 10 chars)
+    - Estado: select con lista de ESTADOS desde venezuelaGeo.js
+    - Municipio: select en cascada (dependiente del estado), 
+      usa getMunicipios(estado). Se deshabilita si no hay estado.
+    - NOTA: no incluimos parroquia aquí (el ERP original solo pide
+      estado + municipio para trámites)
+
+  SECCIÓN D — Paso 3: Descripción y Documentos
+    ┌─────────────────────────────────────────────────────────┐
+    │ Descripción:                                             │
+    │ ┌─────────────────────────────────────────────────────┐ │
+    │ │ Describa el propósito y alcance de su solicitud...  │ │
+    │ │                                                     │ │
+    │ └─────────────────────────────────────────────────────┘ │
+    │                                    45 / 500 caracteres  │
+    │                                                         │
+    │ Documentos de soporte (PDF, máx 10, 10MB c/u):          │
+    │ ┌─────────────────────────────────────────────────────┐ │
+    │ │          📤 Arrastre archivos PDF aquí              │ │
+    │ │          o haga clic para seleccionar               │ │
+    │ └─────────────────────────────────────────────────────┘ │
+    │                                                         │
+    │ 📄 solicitud.pdf  (245 KB)  [✕]                         │
+    │ 📄 plano.pdf      (1.2 MB)  [✕]                         │
+    └─────────────────────────────────────────────────────────┘
+
+    a) Descripción: textarea con contador de caracteres (X/500)
+
+    b) Zona de upload drag-and-drop:
+       - Div con border-dashed, cursor-pointer, onClick → abre file input
+       - Eventos: onDrop, onDragOver, onDragLeave para feedback visual
+         (dragActive → border-solid + bg-primary/10)
+       - Input type="file" hidden, accept=".pdf,application/pdf", multiple
+       - Validación: solo PDF, máx 10 archivos, máx 10MB cada uno
+       - Lista de archivos cargados debajo: nombre + tamaño (KB) + botón ✕
+
+    c) Función handleFiles(files):
+       - Filtrar por tipo MIME === 'application/pdf'
+       - Filtrar por tamaño <= 10MB
+       - Limitar a 10 archivos máximo
+       - Mostrar errores con toast (useToast)
+       - Agregar al array formData.documentos
+
+    d) Al enviar, los archivos se convierten a base64 dataUrl via FileReader
+       (mismo patrón que el ERP) O se envían solo los nombres (como hace el
+       ERP actual en NuevoTramiteForm línea 130: `documentos: docNombres`).
+       USAR EL MISMO ENFOQUE que el ERP: enviar solo nombres.
+       El backend guarda strings, no blobs.
+
+  SECCIÓN E — Resumen (visible en paso 3, antes del botón enviar):
+    ┌──────────────────────────────────────────────┐
+    │  Resumen de la Solicitud                     │
+    │  ────────────────────────────                │
+    │  Tipo:      Permiso Ambiental                │
+    │  Subtipo:   Forestal                         │
+    │  Solicitante: Juan Pérez                     │
+    │  Cédula:    V-12345678                       │
+    │  Ubicación: Libertador, Distrito Capital     │
+    │  Documentos: 2 archivos (1.4 MB total)       │
+    └──────────────────────────────────────────────┘
+
+  SECCIÓN F — Validación por paso:
+    validateStep(step):
+      Paso 0: tipo, subtipo, solicitante, cedulaRif (no vacíos)
+      Paso 1: direccion, estado, municipio (no vacíos)
+      Paso 2: descripcion (no vacía, min 10 chars)
+
+    Si un paso no es válido, mostrar errores inline en rojo y
+    NO permitir avanzar.
+
+  SECCIÓN G — Submit:
+    - Construir objeto completo con ID auto-generado (PER-2026-XXX o LIC-2026-XXX)
+    - Agregar fechaSolicitud = hoy
+    - Agregar estado = 'REVISION'
+    - Agregar historial inicial: [{ estado: 'REVISION', fecha: now, usuario: solicitante, nota: 'Solicitud recibida' }]
+    - Llamar a tramitesService.crearTramite(data, token)
+    - On success: navigate('/tramites') + toast "Trámite enviado"
+    - On error: mostrar error en el formulario
+
+
+================================================================================
+  PARTE 2 — DENUNCIAS
+  Archivos a modificar/crear:
+    Ecogest Portal/src/views/Denuncias/Denuncias.js      (reescribir)
+    Ecogest Portal/src/views/Denuncias/NuevaDenuncia.js  (reescribir)
+================================================================================
+
+[2.1] Unificar tipos de denuncia con el ERP
+──────────────────────────────────────────────
+  ERP tiene 9 tipos: deforestacion, contaminacion_agua, contaminacion_aire,
+    fauna_silvestre, flora_protegida, residuos_solidos, mineria_ilegal,
+    urbanismo_irregular, otros
+
+  Portal actual tiene 8 tipos distintos: deforestacion, contaminacion_agua,
+    contaminacion_aire, residuos_solidos, fauna_silvestre, incendio,
+    ocupacion_territorio, otro
+
+  DECISIÓN: Adoptar la lista COMPLETA unificada (merge de ambas):
+    deforestacion, contaminacion_agua, contaminacion_aire,
+    fauna_silvestre, flora_protegida, residuos_solidos,
+    mineria_ilegal, urbanismo_irregular, incendio_forestal,
+    ocupacion_territorio, otros
+
+  Con metadata para el UI:
+    [
+      { value: 'deforestacion', label: 'Deforestación / Tala', icon: '🌳', color: 'danger', prioridad: 'alta' },
+      { value: 'contaminacion_agua', label: 'Contaminación de Agua', icon: '💧', color: 'danger', prioridad: 'alta' },
+      { value: 'contaminacion_aire', label: 'Contaminación del Aire', icon: '💨', color: 'warning', prioridad: 'alta' },
+      { value: 'fauna_silvestre', label: 'Fauna Silvestre', icon: '🐾', color: 'danger', prioridad: 'alta' },
+      { value: 'flora_protegida', label: 'Flora Protegida', icon: '🌿', color: 'danger', prioridad: 'alta' },
+      { value: 'residuos_solidos', label: 'Residuos Sólidos', icon: '🗑️', color: 'warning', prioridad: 'media' },
+      { value: 'mineria_ilegal', label: 'Minería Ilegal', icon: '⛏️', color: 'danger', prioridad: 'alta' },
+      { value: 'urbanismo_irregular', label: 'Urbanismo Irregular', icon: '🏗️', color: 'info', prioridad: 'media' },
+      { value: 'incendio_forestal', label: 'Incendio Forestal', icon: '🔥', color: 'danger', prioridad: 'alta' },
+      { value: 'ocupacion_territorio', label: 'Ocupación Ilegal', icon: '🏕️', color: 'warning', prioridad: 'media' },
+      { value: 'otros', label: 'Otro incidente', icon: '📝', color: 'secondary', prioridad: 'baja' },
+    ]
+
+[2.2] Rewrite: Denuncias.js (lista de denuncias)
+───────────────────────────────────────────────────
+  Estado actual: lista de cards sin stats ni filtros.
+  Estado objetivo: dashboard con KPI + filtros + cards.
+
+  MISMA ESTRUCTURA que Tramites.js:
+  
+  SECCIÓN A — KPI Strip:
+    4 tarjetas: Total, Pendientes, En Investigación, Resueltas
+    Fuente: calcular manualmente desde los datos (o usar 
+    denunciasService.obtenerEstadisticas si está disponible)
+
+  SECCIÓN B — Filtro pills:
+    'todas' | 'pendiente' | 'investigando' | 'resuelta'
+    Botones glass-panel con estilo active/inactive.
+
+  SECCIÓN C — Cards de denuncias:
+    Ya existen. Mejorar con:
+    - Badge de prioridad (alta/rojo, media/amarillo, baja/verde) + icono
+    - Badge de estado con color
+    - Badge de tipo con icono emoji
+    - Botón "Ver detalle" en cada card
+    - Botón eliminar (con confirm modal)
+
+  SECCIÓN D — Modal de detalle (nuevo: DenunciaDetalleModal):
+    Diseño con 4 tabs/pestañas:
+    
+    Tab "General":
+      - Código DEN-XXXX-XXXXX
+      - Título
+      - Tipo (con badge color + icono emoji)
+      - Prioridad (badge)
+      - Estado (badge + barra de progreso visual)
+      - Fecha del incidente
+      - Fecha de registro
+      - Descripción completa
+      - Origen (ciudadano / admin)
+    
+    Tab "Ubicación":
+      - Dirección / referencia
+      - Estado → Municipio
+      - Coordenadas GPS (lat, lng) con botón "Ver en Google Maps"
+      - MAPA Leaflet de solo-lectura con marcador en la ubicación
+        (componente MapaDenunciaDetalle adaptado a Tailwind)
+    
+    Tab "Evidencia":
+      - Si no hay archivos: mensaje "Sin evidencia adjunta"
+      - Si hay: lista de archivos con icono (imagen/PDF/video),
+        nombre y badge "Ver"
+    
+    Tab "Seguimiento":
+      - Barra de progreso del estado:
+        Pendiente (25%) → Investigando (50%) → En Proceso (75%) → Resuelta (100%)
+      - Información de asignación (cuadrilla asignada)
+      - Fechas clave (registro, actualización, resolución)
+
+    Implementación de tabs:
+      - Estado React: activeTab ('general' | 'ubicacion' | 'evidencia' | 'seguimiento')
+      - Nav: flex horizontal de botones, cada uno con icono y label,
+        el activo tiene border-bottom-2 border-primary + text-primary
+      - Contenido: renderizado condicional según activeTab
+
+  SECCIÓN E — Eliminar denuncia:
+    - useConfirmModal para confirmar
+    - denunciasService.eliminarDenuncia(id, token)
+    - Recargar lista + toast
+
+[2.3] Rewrite: NuevaDenuncia.js (formulario de creación)
+─────────────────────────────────────────────────────────────
+  Estado actual: formulario plano.
+  Estado objetivo: wizard 2 pasos + mapa Leaflet + upload evidencia.
+
+  SECCIÓN A — Estructura de 2 pasos:
+    Paso 1: "¿Qué tipo de incidente?" — selección de tipo
+    Paso 2: "¿Dónde ocurrió?" — mapa + ubicación + estado/municipio
+
+    Progress bar igual que en trámites pero con 2 pasos.
+
+  SECCIÓN B — Paso 1: Selección de tipo
+    ┌───────────────────────────────────────────────────────┐
+    │  ¿Qué tipo de incidente quieres reportar?             │
+    │                                                       │
+    │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐     │
+    │  │   🌳    │ │   💧    │ │   💨    │ │   🐾    │     │
+    │  │Deforest.│ │Cont.Agua│ │Cont.Aire│ │  Fauna  │     │
+    │  │Prioridad│ │Prioridad│ │Prioridad│ │Prioridad│     │
+    │  │  ALTA   │ │  ALTA   │ │  ALTA   │ │  ALTA   │     │
+    │  └─────────┘ └─────────┘ └─────────┘ └─────────┘     │
+    │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐     │
+    │  │   🌿    │ │   🗑️    │ │   ⛏️    │ │   🏗️    │     │
+    │  │  Flora  │ │Residuos │ │ Minería │ │Urbanismo│     │
+    │  └─────────┘ └─────────┘ └─────────┘ └─────────┘     │
+    │  ┌─────────┐ ┌─────────┐ ┌─────────┐                 │
+    │  │   🔥    │ │   🏕️    │ │   📝    │                 │
+    │  │Incendio │ │Ocupación│ │  Otro   │                 │
+    │  └─────────┘ └─────────┘ └─────────┘                 │
+    │                                                       │
+    │  [Opcional] Fecha del incidente: [__/__/____]         │
+    │  [Opcional] Evidencia: [📤 Arrastrar archivos...]     │
+    └───────────────────────────────────────────────────────┘
+
+    Las tarjetas de tipo:
+    - grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3
+    - Cada tarjeta: border border-glass-border rounded-xl p-4 text-center
+      cursor-pointer hover:border-primary transition-all
+    - Estado seleccionado: border-primary border-2 bg-primary/5
+    - Mostrar: icono emoji grande, label, badge de prioridad auto-asignada
+    - Al hacer click: setFieldValue('tipo', value) + auto-set prioridad
+
+    Upload de evidencia (opcional en paso 1):
+    - Misma zona drag-and-drop que en trámites pero acepta:
+      image/*, .pdf, video/mp4 (máx 5 archivos, 10MB c/u)
+    - Lista de archivos con nombre + tamaño + botón quitar
+
+  SECCIÓN C — Paso 2: Ubicación + Mapa
+    ┌───────────────────────────────────────────────────────┐
+    │  ¿Dónde ocurrió el incidente?                         │
+    │                                                       │
+    │  ┌─────────────────────────────────────────────────┐  │
+    │  │                                                 │  │
+    │  │           MAPA INTERACTIVO LEAFLET              │  │
+    │  │        (haz clic para marcar ubicación)         │  │
+    │  │                                                 │  │
+    │  │              📍 (marcador)                      │  │
+    │  │                                                 │  │
+    │  └─────────────────────────────────────────────────┘  │
+    │  [📍 Usar mi ubicación]                               │
+    │                                                       │
+    │  Estado:    [Distrito Capital ▾]                      │
+    │  Municipio: [Libertador ▾]                            │
+    │  Dirección: [Calle Principal, Sector X________]       │
+    │                                                       │
+    │  ┌─ Coordenadas ─────────────────────────────────┐    │
+    │  │ Lat: 10.4806  Lng: -66.9036  [✓ Ubicación]   │    │
+    │  └──────────────────────────────────────────────┘    │
+    └───────────────────────────────────────────────────────┘
+
+    a) Mapa Leaflet:
+       - Contenedor div con height 350px (o 400px), rounded-xl overflow-hidden
+       - Inicializar en coordenadas de Venezuela (centro aproximado: 7.0, -66.0, zoom 7)
+       - Al hacer click en el mapa: colocar marcador, actualizar lat/lng, 
+         hacer reverse geocoding para obtener dirección
+       - Reverse geocoding: fetch a Nominatim API
+           https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}
+         Extraer road, suburb, city del address devuelto
+       - Botón "Usar mi ubicación": navigator.geolocation.getCurrentPosition()
+       - Auto-centrar en el estado seleccionado (usar coordenadas de venezuelaGeo.js)
+       - Si el usuario cambia de estado en el select, hacer flyTo a las coords de la capital
+
+    b) Cascada estado→municipio:
+       - Estado: select con ESTADOS
+       - Municipio: select en cascada con getMunicipios(estado)
+       - Al cambiar estado: reset municipio, hacer flyTo al mapa
+
+    c) Dirección: input normal, se auto-llena con reverse geocoding
+
+    d) Badge de coordenadas:
+       - Muestra lat/lng cuando hay ubicación marcada
+       - Check verde si las coordenadas están dentro de Venezuela
+         (validación: lat 0.5-12.5, lng -73.5 a -59.5)
+
+  SECCIÓN D — Auto-título y auto-descripción:
+    Al enviar, generar:
+    - título: `Reporte de ${tipoLabel} - ${estadoUbicacion}`
+    - descripción: `Incidente de tipo ${tipoLabel.toLowerCase()} reportado en ${municipio}, ${estadoUbicacion}. ${descripcionAdicional}`
+    - Si el usuario escribió algo en descripción, concatenarlo
+
+  SECCIÓN E — Submit:
+    - prioridad = auto-asignada según tipo
+    - origen = 'ciudadano'
+    - estado = 'pendiente'
+    - fecha = hoy
+    - userId = user.id
+    - Si es anónimo, no enviar userId
+    - Llamar a denunciasService.crearDenuncia(data, token)
+    - On success: navigate('/denuncias') + toast con código de denuncia
+    - On error: toast error
+
+  SECCIÓN F — Validación:
+    Paso 1: tipo no vacío
+    Paso 2: estadoUbicacion no vacío, municipio no vacío
+    Si anónimo: email requerido
+
+
+================================================================================
+  PARTE 3 — MAPA LEAFLET EN EL PORTAL
+================================================================================
+
+[3.1] Instalar Leaflet en el Portal
+─────────────────────────────────────
+  El ERP ya usa Leaflet. El Portal usa CDN para Tailwind pero Leaflet
+  necesita instalarse como dependencia.
+
+  PASOS:
+    cd "Ecogest Portal"
+    npm install leaflet
+
+  Esto instala leaflet + sus tipos. El CSS de Leaflet se importa
+  en el componente del mapa.
+
+[3.2] Crear componente: MapaInteractivo (versión Tailwind)
+─────────────────────────────────────────────────────────────
+  Ruta: Ecogest Portal/src/components/MapaInteractivo.js
+  Basado en: src/views/usuarios/denuncias/components/mapaInteractivo.js (ERP)
+              + src/views/usuarios/denuncias/components/mapaDenunciaDetalle.js (ERP)
+
+  PROPS:
+    onLocationSelect({ lat, lng })  — callback al hacer click en el mapa
+    onAddressFound(address)         — callback con dirección reverse-geocoded
+    initialPosition [lat, lng]      — posición inicial opcional
+    readOnly (bool)                 — si true, solo muestra, no interactúa
+    denuncia (object)               — si se pasa, muestra modo detalle con
+                                      marcador coloreado por tipo + círculo área
+
+  ESTRUCTURA INTERNA:
+    - Usar useRef para mapContainerRef, mapRef, markerRef
+    - Inicializar mapa en useEffect con cleanup (map.remove())
+    - fixLeafletIcons(): mismo fix que el ERP para los iconos default
+    - Tile layer: OpenStreetMap estándar
+    - Click handler: remueve marcador anterior, crea nuevo con L.divIcon
+      personalizado (círculo verde con ícono de ubicación), 
+      abre popup con coordenadas, llama onLocationSelect + reverseGeocode
+    - reverseGeocode(lat, lng): fetch a Nominatim, extrae address
+    - Geolocalización: navigator.geolocation.getCurrentPosition(),
+      centra mapa, coloca marcador, llama onLocationSelect + reverseGeocode
+    - Si readOnly + denuncia: mostrar marcador con color según tipo,
+      círculo de 500m radio, popup con info de la denuncia
+    - useImperativeHandle para exponer: flyTo(lat, lng, zoom), setMarker(lat, lng)
+
+  ESTILOS (inyectados con <style> en el componente):
+    - .mapa-interactivo .leaflet-container: height 100%, border-radius
+    - .mapa-interactivo .custom-marker: background none
+    - .mapa-interactivo .leaflet-popup-content-wrapper: glass-panel style
+    - .mapa-interactivo .leaflet-control-zoom: border-radius
+    - Dark mode: filtros para los tiles (brightness 0.8 invert 0.1)
+
+  INTERFAZ IMPERATIVA (useImperativeHandle + forwardRef):
+    ref.flyTo(lat, lng, zoom)   — vuela el mapa a una ubicación
+    ref.setMarker(lat, lng)     — coloca/quita marcador programáticamente
+
+  Este componente es llamado desde NuevaDenuncia.js y también desde
+  el modal de detalle de Denuncias.js.
+
+[3.3] Crear componente: MapaDenunciaDetalle (modo solo-lectura)
+─────────────────────────────────────────────────────────────────
+  Ruta: Ecogest Portal/src/components/MapaDenunciaDetalle.js
+  Basado en: src/views/usuarios/denuncias/components/mapaDenunciaDetalle.js (ERP)
+
+  PROPS:
+    denuncia (object) — datos de la denuncia { latitud, longitud, tipo, titulo, municipio }
+
+  Es un wrapper de MapaInteractivo con readOnly=true.
+  Muestra:
+    - Marcador coloreado según tipo (con animación pulse)
+    - Círculo de 500m alrededor
+    - Popup con título, tipo, municipio, coordenadas
+    - Badge "Ubicación específica" o "Ubicación general" (si no hay coords)
+    - Coordenadas GPS formateadas
+    - Botón "Ver en Google Maps" que abre maps.google.com
+
+  Si la denuncia no tiene lat/lng, muestra un placeholder con
+  mensaje "Sin coordenadas específicas".
+
+
+================================================================================
+  PARTE 4 — RESUMEN DE ARCHIVOS A CREAR/MODIFICAR
+================================================================================
+
+ARCHIVOS NUEVOS (7):
+────────────────────
+  Ecogest Portal/src/hooks/useToast.js
+  Ecogest Portal/src/hooks/useConfirmModal.js
+  Ecogest Portal/src/hooks/useForm.js
+  Ecogest Portal/src/components/MapaInteractivo.js
+  Ecogest Portal/src/components/MapaDenunciaDetalle.js
+  Ecogest Portal/src/components/FileUploadZone.js    (componente reutilizable drag-and-drop)
+  Ecogest Portal/src/components/StepProgress.js      (barra de pasos reutilizable)
+
+ARCHIVOS A REESCRIBIR (4):
+───────────────────────────
+  Ecogest Portal/src/views/Tramites/Tramites.js       (lista con KPI + filtro + modal detalle)
+  Ecogest Portal/src/views/Tramites/NuevoTramite.js   (wizard 3 pasos + upload PDF + cédula split)
+  Ecogest Portal/src/views/Denuncias/Denuncias.js     (lista con KPI + filtro + modal detalle con tabs)
+  Ecogest Portal/src/views/Denuncias/NuevaDenuncia.js (wizard 2 pasos + mapa + upload evidencia)
+
+ARCHIVOS A MODIFICAR (1):
+──────────────────────────
+  Ecogest Portal/src/utils/validation.js              (agregar sanitizeText, validateFiles)
+
+INSTALAR DEPENDENCIA (1):
+──────────────────────────
+  cd "Ecogest Portal" && npm install leaflet
+
+
+================================================================================
+  PARTE 5 — ORDEN DE EJECUCIÓN RECOMENDADO
+================================================================================
+
+  Fase 1 — Infraestructura (dependencias de todo lo demás):
+    1. npm install leaflet
+    2. Crear useToast.js
+    3. Crear useConfirmModal.js
+    4. Crear useForm.js
+    5. Agregar sanitizeText + validateFiles a validation.js
+    6. Crear StepProgress.js (componente de steps reutilizable)
+    7. Crear FileUploadZone.js (componente drag-and-drop reutilizable)
+
+  Fase 2 — Mapa (necesario para NuevaDenuncia.js):
+    8. Crear MapaInteractivo.js
+    9. Crear MapaDenunciaDetalle.js
+
+  Fase 3 — Trámites (más sencillo, sin mapa):
+    10. Reescribir NuevoTramite.js
+    11. Reescribir Tramites.js (usa modal detalle inline)
+
+  Fase 4 — Denuncias (usa mapa):
+    12. Reescribir NuevaDenuncia.js
+    13. Reescribir Denuncias.js (usa MapaDenunciaDetalle + tabs)
+
+  Fase 5 — Verificación:
+    14. npm run portal-build (verificar que compila)
+    15. Probar flujos completos: crear trámite, ver lista, ver detalle,
+        crear denuncia con mapa, ver lista, ver detalle con tabs
+
+
+================================================================================
+  PARTE 6 — NOTAS TÉCNICAS IMPORTANTES
+================================================================================
+
+6.1 — Tailwind en vez de CoreUI
+  - Iconos: usar <span className="material-symbols-outlined">icon_name</span>
+    en vez de <CIcon icon={cilXyz} />
+  - Modales: implementar con divs fixed + backdrop-blur (no CModal)
+  - Tablas: divs con grid/flex (no CTable)
+  - Badges: spans con rounded-full + bg-* + text-*
+
+6.2 — Manejo de temas (light/dark)
+  - El Portal ya tiene sistema de temas via useTheme.js
+  - Todos los componentes nuevos deben usar glass-panel, text-on-surface,
+    bg-surface-container-lowest, etc. que YA funcionan en ambos temas
+  - El mapa Leaflet: en dark mode, aplicar filter: brightness(0.8) invert(0.1)
+    a .leaflet-tile (mismo enfoque del ERP)
+
+6.3 — El backend es el mismo
+  - Los servicios tramitesService.js y denunciasService.js del Portal
+    YA contienen todos los métodos necesarios
+  - NO hay que modificar ningún servicio existente
+  - NO hay que tocar el backend (db.json ni server.js)
+
+6.4 — Datos del usuario
+  - El Portal ya tiene useAuth() que provee user, token, isAuthenticated
+  - Todos los formularios reciben user y token como props desde App.js
+  - Usar user.nombre, user.email, user.cedula, user.telefono para 
+    pre-llenar formularios cuando corresponda
+
+6.5 — API de archivos
+  - El ERP envía solo los nombres de archivo al backend (no base64)
+    porque json-server no maneja bien blobs grandes
+  - SEGUIR EL MISMO ENFOQUE: guardar nombres en el array documentos/evidencia
+  - El upload visual es solo para feedback al usuario; al submit, 
+    extraer file.name de cada File object
+
+6.6 — Navegación
+  - Usar navigate(path) de React (via props, pasada desde App.js)
+  - No usar window.location.hash directamente
+  - Back buttons: navigate('/tramites') o navigate('/denuncias')
+
+6.7 — Scroll en modales
+  - Los modales grandes (detalle, formularios) deben tener 
+    max-h-[85vh] overflow-y-auto para que el contenido scrollee
+    sin que el modal se salga de la pantalla
+
+6.8 — Z-index
+  - Toast: z-50
+  - ConfirmModal: z-50
+  - Modales de formulario/detalle: z-40
+  - Backdrop: z-40 con bg-black/50 backdrop-blur-sm
+
+================================================================================
+  FIN DEL PLAN
+================================================================================

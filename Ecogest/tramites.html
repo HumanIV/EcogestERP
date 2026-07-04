@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tramites Ciudadanos - MINEC</title>
+  <meta name="description" content="Portal ciudadano premium para denuncias, permisos y licencias ambientales.">
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body class="tramites-page">
+  <nav class="navbar navbar-expand-lg bg-white navbar-light sticky-top p-0">
+    <a href="index.html" class="navbar-brand d-flex align-items-center border-end px-4 px-lg-5">
+      <h2 class="m-0 text-primary">Ministerio del Ecosocialismo</h2>
+    </a>
+    <button type="button" class="navbar-toggler me-4" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <div class="navbar-nav ms-auto p-4 p-lg-0">
+        <a href="index.html" class="nav-item nav-link">Inicio</a>
+        <a href="service.html" class="nav-item nav-link">Servicios</a>
+        <a href="tramites.html" class="nav-item nav-link active">Tramites</a>
+        <a href="contact.html" class="nav-item nav-link">Contacto</a>
+      </div>
+      <div class="d-none d-lg-block px-lg-5"></div>
+    </div>
+  </nav>
+
+  <header class="tramites-hero container-fluid py-5 mb-5">
+    <div class="container py-4">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+          <span class="tramites-chip">Portal ciudadano digital</span>
+          <h1 class="display-5 text-white fw-bold mt-3 mb-3">Denuncias, permisos y licencias con experiencia premium</h1>
+          <p class="text-white-50 mb-4">Sin cuenta obligatoria. Registra tu tramite en minutos, recibe codigo de seguimiento y consulta estado cuando quieras.</p>
+          <div class="d-flex flex-wrap gap-3">
+            <a class="btn btn-light px-4 py-2 fw-bold" href="#tramitesForms">Iniciar tramite</a>
+            <a class="btn btn-outline-light px-4 py-2" href="#consultaEstado">Consultar estado</a>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="tramites-hero-card">
+            <h6 class="mb-3">Indicadores ciudadanos</h6>
+            <div class="d-flex justify-content-between"><span>Reportes recibidos</span><strong id="kpiDenuncias">0</strong></div>
+            <div class="d-flex justify-content-between"><span>Permisos solicitados</span><strong id="kpiPermisos">0</strong></div>
+            <div class="d-flex justify-content-between"><span>Licencias en curso</span><strong id="kpiLicencias">0</strong></div>
+            <small class="d-block mt-2 text-muted">Actualizado en tu navegador</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container pb-5">
+    <section class="row g-4 mb-5">
+      <div class="col-md-4">
+        <div class="tramite-stat-card">
+          <h6>1. Reporta</h6>
+          <p>Describe el caso y adjunta evidencia.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="tramite-stat-card">
+          <h6>2. Recibe codigo</h6>
+          <p>Obtienes un codigo unico para seguimiento.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="tramite-stat-card">
+          <h6>3. Consulta estado</h6>
+          <p>Revisa avance con codigo + documento.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="consultaEstado" class="mb-5 p-4 tramite-surface">
+      <h4 class="mb-3">Consulta de estado por codigo</h4>
+      <form id="lookupForm" class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="lookupCode">Codigo</label>
+          <input id="lookupCode" class="form-control" placeholder="DEN-2404-00001 / PERM-..." required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="lookupDoc">Documento o RIF</label>
+          <input id="lookupDoc" class="form-control" placeholder="V12345678 / J-12345678-9" required>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button class="btn btn-primary w-100" type="submit">Consultar</button>
+        </div>
+      </form>
+      <div id="lookupResult" class="mt-3"></div>
+    </section>
+
+    <section id="tramitesForms">
+      <ul class="nav nav-pills tramite-tabs mb-4" id="tramitesTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tabDenuncias" type="button">Denuncias</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabPermisos" type="button">Permisos</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabLicencias" type="button">Licencias</button></li>
+      </ul>
+
+      <div class="tab-content">
+        <div class="tab-pane fade show active" id="tabDenuncias">
+          <div class="card border-0 shadow-sm tramite-card">
+            <div class="card-body p-4">
+              <h5 class="mb-1">Nueva denuncia ambiental</h5>
+              <p class="text-muted mb-4">Inspirado en el modulo ciudadano de CoreUI: rapido, guiado y con ubicacion en mapa.</p>
+              <form id="denunciaForm" class="row g-3 mt-1">
+                <div class="col-md-6"><label class="form-label">Titulo</label><input name="titulo" class="form-control" required></div>
+                <div class="col-md-6"><label class="form-label">Tipo</label><select name="tipo" class="form-select" required><option value="">Seleccione</option><option value="deforestacion">Deforestacion</option><option value="contaminacion_agua">Contaminacion de agua</option><option value="contaminacion_aire">Contaminacion de aire</option><option value="residuos_solidos">Residuos solidos</option><option value="mineria_ilegal">Mineria ilegal</option><option value="fauna_silvestre">Fauna silvestre</option><option value="otros">Otros</option></select></div>
+                <div class="col-md-4"><label class="form-label">Estado</label><input name="estadoUbicacion" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label">Municipio</label><input name="municipio" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label">Documento</label><input name="documento" class="form-control" placeholder="V12345678" required></div>
+                <div class="col-12"><label class="form-label">Descripcion</label><textarea name="descripcion" class="form-control" rows="4" minlength="50" required></textarea></div>
+
+                <div class="col-12">
+                  <div class="tramite-map-wrap">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <label class="form-label mb-0">Ubicacion en mapa</label>
+                      <button type="button" id="geoLocateBtn" class="btn btn-sm btn-outline-primary">Usar mi ubicacion</button>
+                    </div>
+                    <div id="denunciaMap" class="denuncia-map"></div>
+                    <small class="text-muted d-block mt-2">Haz click en el mapa para fijar el punto del incidente.</small>
+                    <input type="hidden" name="latitud" id="latitud">
+                    <input type="hidden" name="longitud" id="longitud">
+                  </div>
+                </div>
+
+                <div class="col-12"><button class="btn btn-primary" type="submit">Enviar denuncia</button></div>
+              </form>
+              <div id="denunciaFeedback" class="mt-3"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="tabPermisos">
+          <div class="card border-0 shadow-sm tramite-card">
+            <div class="card-body p-4">
+              <h5 class="mb-1">Solicitud de permiso ambiental</h5>
+              <p class="text-muted mb-4">Proceso empresarial ciudadano para regularizacion ambiental.</p>
+              <form id="permisoForm" class="row g-3 mt-1">
+                <div class="col-md-4"><label class="form-label">Tipo de permiso</label><select name="tipoPermiso" class="form-select" required><option value="">Seleccione</option><option value="emisiones">Emisiones</option><option value="descargas">Descargas</option><option value="residuos">Residuos</option><option value="ruido">Ruido</option></select></div>
+                <div class="col-md-4"><label class="form-label">Razon social</label><input name="razonSocial" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label">RIF</label><input name="rif" class="form-control" placeholder="J-12345678-9" required></div>
+                <div class="col-md-6"><label class="form-label">Correo</label><input type="email" name="email" class="form-control" required></div>
+                <div class="col-md-6"><label class="form-label">Telefono</label><input name="telefono" class="form-control" placeholder="0412-1234567" required></div>
+                <div class="col-12"><label class="form-label">Descripcion del proceso</label><textarea name="descripcionProceso" class="form-control" rows="4" minlength="50" required></textarea></div>
+                <div class="col-12"><button class="btn btn-primary" type="submit">Solicitar permiso</button></div>
+              </form>
+              <div id="permisoFeedback" class="mt-3"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="tabLicencias">
+          <div class="card border-0 shadow-sm tramite-card">
+            <div class="card-body p-4">
+              <h5 class="mb-1">Solicitud de licencia ambiental</h5>
+              <p class="text-muted mb-4">Licenciamiento digital con validaciones de datos clave.</p>
+              <form id="licenciaForm" class="row g-3 mt-1">
+                <div class="col-md-4"><label class="form-label">Tipo de licencia</label><select name="tipoLicencia" class="form-select" required><option value="">Seleccione</option><option value="forestal">Forestal</option><option value="residuos">Residuos</option><option value="emisiones">Emisiones</option><option value="agua">Uso de agua</option></select></div>
+                <div class="col-md-4"><label class="form-label">Empresa</label><input name="empresa" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label">RIF</label><input name="rif" class="form-control" placeholder="J-12345678-9" required></div>
+                <div class="col-md-6"><label class="form-label">Representante legal</label><input name="representanteLegal" class="form-control" required></div>
+                <div class="col-md-6"><label class="form-label">Correo</label><input type="email" name="email" class="form-control" required></div>
+                <div class="col-12"><label class="form-label">Descripcion del proyecto</label><textarea name="descripcion" class="form-control" rows="4" minlength="50" required></textarea></div>
+                <div class="col-12 form-check ms-2"><input class="form-check-input" type="checkbox" name="aceptaTerminos" id="aceptaTerminos"><label class="form-check-label" for="aceptaTerminos">Acepto terminos y condiciones</label></div>
+                <div class="col-12"><button class="btn btn-primary" type="submit">Solicitar licencia</button></div>
+              </form>
+              <div id="licenciaFeedback" class="mt-3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/tramites.js"></script>
+</body>
+</html>

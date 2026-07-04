@@ -1,0 +1,354 @@
+================================================================================
+PLAN DE MEJORAS — MÓDULO USUARIOS (src/views/usuarios/)
+Estado analizado: Mayo 2026
+================================================================================
+
+RESUMEN EJECUTIVO
+-----------------
+El módulo fue parcialmente refactorizado por OpenCode (se crearon MisTramites y
+MisDenuncias). Sin embargo persisten falencias críticas en UX, consistencia visual,
+validaciones y lógica de negocio que se detallan a continuación.
+
+================================================================================
+PARTE 1 — FALENCIAS FUNCIONALES (bugs y lógica rota)
+================================================================================
+
+[F1] NuevoTramiteForm.js — DESCRIPCIÓN LIMITADA A 50 CARACTERES (crítico)
+  - Línea 444: maxLength={50} y línea 169 valida descripcion.length > 50
+  - Un campo de descripción de un trámite ambiental con 50 chars es inutilizable
+  - Un permiso forestal necesita al menos 200-500 chars para describir el proyecto
+  SOLUCIÓN: Cambiar maxLength a 500 y validar minLength >= 30 para asegurar
+  que el ciudadano escriba algo útil, no solo "hola".
+
+[F2] NuevoTramiteForm.js — RESETEO INCOMPLETO AL CERRAR (bug)
+  - handleGuardar() resetea formData pero NO resetea municipiosDisponibles
+  - Si el usuario abre el form de nuevo, el select de municipios queda populado
+  - Tampoco hay confirmación si el usuario cierra con datos a medio llenar
+  SOLUCIÓN:
+    const resetForm = () => {
+      setFormData({ tipo: TIPOS_TRAMITE.PERMISO, subtipo: '', ... });
+      setDocTipo('V');
+      setMunicipiosDisponibles([]);
+      setError(null);
+    };
+  Usar resetForm() en onClose y en onSave. Agregar confirmación de cierre
+  si hay datos (como hace DenunciaForm con useConfirmModal).
+
+[F3] NuevoTramiteForm.js — VALIDACIÓN DE EMAIL NO BLOQUEA EN TIEMPO REAL
+  - email es opcional pero si se escribe un email inválido, el error solo
+    aparece al submit. El usuario no sabe que está mal mientras escribe.
+  SOLUCIÓN: Agregar validación onBlur en el input de email mostrando
+  error inline igual que el campo cedulaRif que ya lo hace bien.
+
+[F4] MisTramites/index.js — FILTROS PILL SIN IMPLEMENTAR (UX rota)
+  - El index.js planificaba "filtros rápidos tipo pills" pero la implementación
+    delega todo a MisTramitesTabla con un CFormSelect genérico (dropdown)
+  - El CFormSelect aparece aunque tramitesFiltrados.length === 0 queda oculto
+    porque el empty state retorna antes del render del select
+  SOLUCIÓN: Mover los filtros pill al index.js como se planeó, encima de la
+  CCard de la tabla, usando CBadge/CButton pills igual que en denuncias.js
+
+[F5] MisDenuncias/index.js — SOLO ES UN RE-EXPORT (stub incompleto)
+  - El archivo es: export { default } from '../denuncias/denuncias';
+  - Por lo tanto MisDenuncias usa useDenuncias (MOCK_DATA volátil en memoria)
+    en lugar del nuevo useMisDenuncias que sí usa gestionService
+  - El hook useMisDenuncias.js existe (3316 bytes) pero NUNCA SE USA
+  SOLUCIÓN: Implementar MisDenuncias/index.js como vista real que use
+  useMisDenuncias y reutilice los componentes de denuncias/components/
+
+[F6] useMisDenuncias.js — VERIFICAR QUE gestionService EXPORTA lo necesario
+  - Si gestionService no tiene crearDenuncia() o la firma es diferente,
+    el hook fallará silenciosamente. Revisar el servicio antes de usar.
+
+[F7] perfilUsers.js — DATOS MOCK NO PERSISTENTES
+  - formData se inicializa desde MOCK_USUARIO (constante hardcodeada)
+  - guardarCambios() actualiza el estado local pero NO guarda en localStorage
+  - Al refrescar la página, los cambios se pierden
+  SOLUCIÓN mínima: guardar en localStorage al guardar:
+    localStorage.setItem('perfilCiudadano', JSON.stringify(sanitizedData));
+  Y cargar al montar:
+    const saved = localStorage.getItem('perfilCiudadano');
+    setFormData(saved ? JSON.parse(saved) : MOCK_USUARIO);
+
+[F8] denunciasTable.js — LÍNEA 546 TIENE CÓDIGO COMENTADO MEZCLADO CON JSX
+  - Línea 546: "// En DenunciasTable.jsx, en la sección de ubicación..."
+  - Esto es un comentario de instrucción del agente que quedó en el código
+  - Aunque es un comentario JS válido, ensucia el código y puede confundir
+  SOLUCIÓN: Eliminar ese bloque de comentario (líneas 546-549 aprox.)
+
+[F9] denunciasForm.js — TÍTULO Y DESCRIPCIÓN SE GENERAN AUTOMÁTICAMENTE
+  - La descripción enviada al admin es: "Incidente de tipo X en Y, Estado"
+  - El ciudadano no puede escribir su propia descripción del incidente
+  - Esto hace que todas las denuncias del mismo tipo/zona sean idénticas
+  SOLUCIÓN: Agregar un campo CFormTextarea en el paso 1 donde el ciudadano
+  describa con sus palabras qué ocurrió (min 30 chars, requerido).
+  El titulo puede seguir siendo auto-generado.
+
+================================================================================
+PARTE 2 — FALENCIAS VISUALES Y DE UX
+================================================================================
+
+[V1] MisTramites/index.js — KPI CARDS SIN CLASES DEL SISTEMA DE DISEÑO
+  - Los KPI cards usan div con eco-card aplicado directamente como className
+    pero sin CCard/CCardBody de CoreUI
+  - Usando: <div className="eco-card p-3 h-100 ...">
+  - Debería ser: <CCard className="eco-card border-0 h-100"><CCardBody>
+  - Además los números de los KPI usan <h3> sin text-eco ni text-montserrat
+  SOLUCIÓN: Reescribir los 4 KPIs usando el mismo patrón de permisos.js:
+    <CCard className="eco-card border-0 h-100">
+      <CCardBody className="d-flex align-items-center gap-3 p-3">
+        <div className="stats-icon-minec"><CIcon icon={...} /></div>
+        <div>
+          <div className="h4 fw-bold mb-0 text-eco">{kpi.value}</div>
+          <div className="small text-minec-muted">{kpi.label}</div>
+        </div>
+      </CCardBody>
+    </CCard>
+
+[V2] MisTramites/index.js — PAGE HEADER INCONSISTENTE
+  - Usa <div className="eco-card mb-4 p-4"> como header en lugar del patrón
+    estándar del sistema: d-flex + stats-icon-minec + h1.text-eco
+  - El subtítulo usa text-muted en lugar de text-minec-muted
+  - El icono cilTask está dentro del h1 directamente, debería ser stats-icon-minec
+  SOLUCIÓN: Usar exactamente el mismo patrón del header de denuncias.js:
+    <div className="d-flex flex-column flex-md-row justify-content-between
+         align-items-start align-items-md-center mb-4 pt-2">
+      <div className="mb-3 mb-md-0 d-flex align-items-center gap-3">
+        <div className="stats-icon-minec"><CIcon icon={cilTask} /></div>
+        <div>
+          <h1 className="h3 fw-bold mb-0 text-montserrat text-eco">
+            Mis Trámites Ambientales
+          </h1>
+          <p className="text-minec-muted small mb-0 fw-light">
+            Permisos y Licencias · Seguimiento en tiempo real
+          </p>
+        </div>
+      </div>
+      <div className="d-flex gap-2">... botones ...</div>
+    </div>
+
+[V3] MisTramites/index.js — FOOTER CARD ES RUIDO VISUAL INNECESARIO
+  - Hay una CCard extra al final con badges de conteo (Permisos: X, Licencias: Y)
+  - Esta información ya está en los KPIs de arriba — es redundante
+  - Ocupa espacio sin aportar valor
+  SOLUCIÓN: Eliminar esa CCard footer. Si se quiere mantener la info,
+  agregarla como pequeño texto en el footer del card de la tabla (eco-surface
+  border-top como se hace en denuncias.js y permisos.js)
+
+[V4] MisTramitesTabla.js — FILTRO COMO DROPDOWN EN LUGAR DE PILLS
+  - El filtro es un CFormSelect (dropdown) cuando todos los demás módulos
+    usan botones pill: CButton rounded-pill con filter activo/inactivo
+  - Visualmente rompe la consistencia con denuncias.js y permisos.js
+  SOLUCIÓN: Reemplazar el CFormSelect por pills como en permisos.js:
+    {filters.map(f => (
+      <CTooltip key={f.key} content={`Filtrar: ${f.label}`}>
+        <CButton
+          size="sm"
+          color={filtro === f.key ? f.color : `outline-${f.color}`}
+          onClick={() => onFiltroChange(f.key)}
+          className="rounded-pill px-3"
+        >
+          <CIcon icon={f.icon} className="me-1" />{f.label}
+        </CButton>
+      </CTooltip>
+    ))}
+
+[V5] MisTramitesTabla.js — COLUMNA ACCIONES CON "Acc." COMO LABEL
+  - CTableHeaderCell muestra "Acc." — abreviatura poco profesional
+  - Debería estar vacío o decir "Acciones"
+  SOLUCIÓN: <CTableHeaderCell className="text-end">Acciones</CTableHeaderCell>
+
+[V6] MisTramitesTabla.js — EMPTY STATE SIN BOTÓN DE ACCIÓN
+  - El estado vacío solo muestra texto e icono pero sin CButton para crear
+  - En denuncias.js el empty state tiene botón "Comenzar Mi Primera Denuncia"
+  SOLUCIÓN: Agregar prop onNuevoTramite y mostrar botón en el empty state:
+    <CButton color="success" onClick={onNuevoTramite}
+      className="btn-minec-success fw-bold px-4 rounded-pill">
+      <CIcon icon={cilPlus} className="me-2" />
+      Crear Mi Primer Trámite
+    </CButton>
+
+[V7] NuevoTramiteForm.js — HEADER DEL MODAL SIN GRADIENTE ECO
+  - El header usa bg-primary bg-opacity-10 o bg-success bg-opacity-10
+    que son fondos muy tenues y no tienen el impacto visual del sistema
+  - El modal de denuncias tiene:
+    background: 'linear-gradient(135deg, var(--eco-700) 0%, var(--eco-500) 100%)'
+    con texto blanco e icono con bg-white bg-opacity-25
+  SOLUCIÓN: Unificar el header del modal con el patrón eco:
+    <CModalHeader style={{
+      background: isPermiso
+        ? 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)'
+        : 'linear-gradient(135deg, var(--eco-700) 0%, var(--eco-500) 100%)',
+      color: 'white', borderBottom: 'none'
+    }}>
+      <div className="d-flex align-items-center w-100">
+        <div className="bg-white bg-opacity-25 rounded-circle p-2 me-3">
+          <CIcon icon={themeIcon} className="text-white" />
+        </div>
+        <div>
+          <CModalTitle className="fw-bold text-montserrat h4 mb-0">...</CModalTitle>
+          <small className="opacity-90 fw-light">...</small>
+        </div>
+        <CBadge color="warning" shape="rounded-pill" className="ms-auto">
+          {isPermiso ? 'Permiso' : 'Licencia'}
+        </CBadge>
+      </div>
+    </CModalHeader>
+
+[V8] perfilUsers.js — AVATAR SIN FOTO DE RESPALDO
+  - Si formData.foto es null/undefined, CAvatar queda vacío sin inicial
+  - El sistema de diseño tiene CAvatar con color y textColor para el fallback
+  SOLUCIÓN:
+    <CAvatar
+      size="xl"
+      src={formData.foto || undefined}
+      color={!formData.foto ? "success" : undefined}
+      textColor={!formData.foto ? "white" : undefined}
+      className="mb-3"
+      style={{ border: '4px solid var(--eco-200)', boxShadow: 'var(--shadow-md)' }}
+    >
+      {!formData.foto && formData.nombre?.charAt(0)?.toUpperCase()}
+    </CAvatar>
+
+[V9] perfilUsers.js — SIN SECCIÓN DE ACTIVIDAD RECIENTE
+  - La columna izquierda queda muy corta vs la derecha
+  - Falta una card que muestre "Última actividad": última denuncia, último
+    trámite, estado de cuenta — para que el perfil se vea completo
+  SOLUCIÓN: Agregar debajo de la card "Contacto Rápido":
+    <CCard className="eco-card mt-4">
+      <CCardHeader>Actividad Reciente</CCardHeader>
+      <CCardBody>
+        Mostrar últimos 3 trámites/denuncias del ciudadano
+        (importar desde tramitesService y gestionService)
+      </CCardBody>
+    </CCard>
+
+[V10] denunciasTable.js — BOTÓN "COMPARTIR REPORTE" SIN FUNCIONALIDAD
+  - Línea 726-730: hay un CButton "Compartir Reporte" que no hace nada
+  - Es un botón fantasma que confunde al usuario
+  SOLUCIÓN: Implementar share con navigator.share() o copiar URL al clipboard,
+  o eliminar el botón si no hay funcionalidad planeada.
+
+================================================================================
+PARTE 3 — MEJORAS DE ACCESIBILIDAD Y MOBILE
+================================================================================
+
+[A1] TABLA MisTramitesTabla NO ES USABLE EN MÓVIL
+  - La tabla tiene 7 columnas en pantallas pequeñas → overflow horizontal
+  - En móvil no se ve bien ni con table-responsive
+  SOLUCIÓN: En mobile (<md) mostrar cards en lugar de tabla:
+    Usar d-md-none para cards y d-none d-md-block para la tabla
+    Cada card muestra: ID, tipo badge, estado badge, fecha y botón de acción
+
+[A2] FORMULARIOS SIN aria-label NI aria-describedby
+  - Los CFormInput y CFormSelect no tienen atributos de accesibilidad
+  - Usuarios con lectores de pantalla no pueden identificar los campos
+  SOLUCIÓN: Agregar id únicos y htmlFor en los labels, y aria-describedby
+  apuntando a los mensajes de error.
+
+[A3] SPINNER DE CARGA AUSENTE EN MisTramites
+  - Cuando loading=true, la vista solo muestra la tabla vacía sin ningún
+    indicador visual de que está cargando datos
+  - Comparar con denuncias.js que tiene spinner-grow con mensaje
+  SOLUCIÓN: Agregar bloque de loading antes de la tabla:
+    {loading ? (
+      <div className="text-center py-5">
+        <div className="spinner-grow text-success mb-3" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+        <p className="text-minec-muted">Consultando tus trámites...</p>
+      </div>
+    ) : (
+      <MisTramitesTabla ... />
+    )}
+
+================================================================================
+PARTE 4 — MEJORAS DE ARQUITECTURA Y CÓDIGO
+================================================================================
+
+[C1] NuevoTramiteForm.js USA useState DE REACT SIN IMPORTAR (warning)
+  - Líneas 47, 59, 60, 61, 62: React.useState() en lugar de useState
+  - La importación de React es para JSX, pero los hooks deben importarse
+  - Aunque funciona, no sigue el patrón del proyecto (todos usan import { useState })
+  SOLUCIÓN: Cambiar a:
+    import React, { useState } from 'react';
+    ... y reemplazar React.useState → useState
+
+[C2] NuevoTramiteForm.js — IMPORT VENEZUELA_GEO MAL NOMBRADO
+  - Línea 15: import { VENEZUELA_GEO } from '../../_shared/venezuelaGeo'
+  - venezueGeo.js exporta getMunicipiosByEstado y getCapitalCoords,
+    verificar si VENEZUELA_GEO existe como export nombrado en ese archivo
+  - Si no existe, el componente falla silenciosamente con municipios vacíos
+  SOLUCIÓN: Verificar venezolGeo.js y ajustar el import:
+    import { VENEZUELA_GEO, getMunicipiosByEstado } from '../../_shared/venezuelaGeo'
+
+[C3] MisTramites/index.js — NO IMPORTA ToastContainer
+  - useToast() retorna { showToast, ToastContainer } pero index.js no
+    renderiza <ToastContainer /> en ningún lado
+  - Los toasts de éxito/error no se verán en pantalla
+  SOLUCIÓN: Destructurar ToastContainer del hook y renderizarlo:
+    const { showToast, ToastContainer } = useToast();
+    ...
+    return (
+      <CContainer fluid>
+        ...
+        <ToastContainer />  {/* <-- agregar al final */}
+      </CContainer>
+    );
+
+[C4] denunciasTable.js — DEMASIADO GRANDE (819 líneas, 36KB)
+  - Este archivo contiene: tabla, modal detalle, modal confirmación,
+    helpers de prioridad, helpers de tipo, helpers de progreso
+  - Viola el principio de responsabilidad única
+  SOLUCIÓN GRADUAL:
+    - Extraer modal de detalle a DetallesDenunciaModal.js
+    - Extraer helpers (getPrioridadBadge, getTipoIcon, etc.) a denunciasUtils.js
+    - El archivo principal debería quedar en ~150 líneas
+
+[C5] _shared/validation.js — VALIDACIONES NO USADAS EN NuevoTramiteForm
+  - El archivo _shared/validation.js tiene validateText, validateEmail,
+    validatePhone, validatePassword — funciones robustas
+  - NuevoTramiteForm implementa su propia validateEmail inline
+  - Duplicación innecesaria
+  SOLUCIÓN: Importar validateEmail desde _shared/validation.js
+
+================================================================================
+PARTE 5 — PRIORIZACIÓN
+================================================================================
+
+CRÍTICO (rompe funcionalidad):
+  F1 — descripción de 50 chars insuficiente → cambiar a 500
+  F3 — MisDenuncias es stub → implementar con useMisDenuncias
+  C3 — ToastContainer no renderizado → toasts invisibles
+  F2 — reseteo incompleto al cerrar form
+
+IMPORTANTE (afecta UX significativamente):
+  V1 — KPIs sin clases del sistema de diseño
+  V2 — Page header inconsistente
+  V4 — Filtros como dropdown en lugar de pills
+  A3 — Sin spinner de carga en MisTramites
+  F7 — Perfil no persiste en localStorage
+  V6 — Empty state sin botón de acción
+
+DESEABLE (mejora la calidad):
+  V3 — Eliminar footer card redundante
+  V7 — Header de modal sin gradiente eco
+  V8 — Avatar sin fallback de inicial
+  V10 — Botón "Compartir" sin funcionalidad
+  C1 — React.useState → useState
+  A1 — Cards en mobile en lugar de tabla
+  C4 — Dividir denunciasTable.js en componentes
+
+================================================================================
+CONVENCIONES A RESPETAR
+================================================================================
+- Clases CSS: eco-card, text-eco, text-minec-muted, btn-minec-success,
+  stats-icon-minec, text-montserrat, animate-fade-eco, eco-surface,
+  bg-eco-soft, bg-nature-soft, text-nature, badge-eco, input-minec
+- Hooks: useToast() y useConfirmModal() de ../_shared/ SIEMPRE
+- Iconos: import individual desde @coreui/icons
+- NO usar alert(), confirm() nativos del browser
+- Patrón de page header: div > div.d-flex.gap-3 > div.stats-icon-minec + div > h1.text-eco
+- Patrón KPI: CCard.eco-card > CCardBody.d-flex.gap-3 > div.stats-icon-minec + div > h4.text-eco
+
+================================================================================

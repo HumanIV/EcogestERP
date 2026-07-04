@@ -1,0 +1,404 @@
+================================================================================
+Plan de Refactor RRHH — Reconstrucción Visual Solarctec v1.1
+================================================================================
+
+Referencia Visual: Lo que YA funciona en GA
+================================================================================
+
+Después de analizar Cuadrillas, GestionDenuncias, Inventario y SolicitudActivos,
+estos son los patrones canónicos que replicaremos en RRHH:
+
+HEADER DEL MÓDULO
+-----------------
+<div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+  <div className="d-flex align-items-center gap-2">
+    <div className="bg-eco-soft rounded-circle p-2">
+      <CIcon icon={cilUser} className="text-eco" />
+    </div>
+    <div>
+      <h1 className="h4 fw-bold text-montserrat mb-0">Título del Módulo</h1>
+      <small className="text-minec-muted">Subtítulo descriptivo</small>
+    </div>
+  </div>
+  <div className="d-flex gap-2">
+    <CButton size="sm" color="success" onClick={...}>
+      <CIcon icon={cilPlus} className="me-2" /> Nueva Acción
+    </CButton>
+  </div>
+</div>
+
+TABLA
+-----
+<CCard className="eco-card">
+  <CCardBody className="p-0">
+    <CTable hover responsive className="table-minec mb-0">
+      <CTableHead>
+        <CTableRow style={{ background: 'linear-gradient(135deg, var(--eco-50), var(--eco-100))' }}>
+          <CTableHeaderCell className="text-eco fw-semibold">Columna</CTableHeaderCell>
+        </CTableRow>
+      </CTableHead>
+      <CTableBody>
+        <CTableRow className="hover-lift">...</CTableRow>
+      </CTableBody>
+    </CTable>
+  </CCardBody>
+</CCard>
+
+FILTROS
+-------
+<CRow className="g-2 mb-4">
+  <CCol md={5}>
+    <CInputGroup>
+      <CInputGroupText className="bg-eco-soft border-end-0">
+        <CIcon icon={cilSearch} />
+      </CInputGroupText>
+      <CFormInput placeholder="Buscar..." className="input-minec border-start-0" />
+    </CInputGroup>
+  </CCol>
+  <CCol md={5}>
+    <CFormSelect className="input-minec">
+      <option value="">Todos</option>
+    </CFormSelect>
+  </CCol>
+  <CCol md={2}>
+    <CButton color="outline-secondary" className="w-100">
+      <CIcon icon={cilSync} className="me-1" /> Limpiar
+    </CButton>
+  </CCol>
+</CRow>
+
+MODAL
+-----
+<CModal visible={visible} onClose={onClose} size="lg" className="eco-modal">
+  <CModalHeader closeButton>
+    <CModalTitle className="fw-bold text-eco">
+      <CIcon icon={...} className="me-2" /> Título
+    </CModalTitle>
+  </CModalHeader>
+  <CModalBody className="px-4">...</CModalBody>
+  <CModalFooter className="border-top-0 pt-0">
+    <CButton color="secondary" onClick={onClose}>Cancelar</CButton>
+    <CButton color="success" onClick={onSave}>Guardar</CButton>
+  </CModalFooter>
+</CModal>
+
+ESTADO VACÍO
+------------
+<div className="text-center py-5">
+  <div className="bg-eco-soft rounded-circle p-4 d-inline-flex align-items-center justify-content-center mb-3">
+    <CIcon icon={cilUser} size="xl" className="text-eco" />
+  </div>
+  <h5 className="text-eco mb-2">Sin resultados</h5>
+  <p className="text-muted">Intenta con otros filtros</p>
+</div>
+
+CLASES CSS CANÓNICAS (definidas en style.scss)
+----------------------------------------------
+eco-card          → Card principal con borde y sombra verde
+eco-surface       → Superficie alternativa
+bg-eco-soft       → Fondo verde suave
+text-eco          → Texto verde (--ecogest-primary)
+text-minec-muted  → Texto secundario apagado
+text-montserrat   → Fuente Montserrat para títulos
+input-minec       → Inputs con borde y sombra personalizada
+btn-minec         → Botón primario verde
+btn-minec-outline → Botón outline verde
+table-minec       → Tablas con estilo ECOGEST
+badge-eco         → Badges con borde y padding
+modal-minec       → Modales con sombra y borde superior
+hover-lift        → Efecto hover en filas de tabla
+
+
+================================================================================
+Plan de Ejecución
+================================================================================
+
+Paso 0 — Preparación (NO tocar services, hooks ni constants)
+================================================================================
+
+Lo que se conserva INTACTO:
+  - RRHH/**/services/*.js (4 archivos)
+  - RRHH/**/hooks/*.js (4 archivos)
+  - RRHH/**/constants/*.js (4 archivos)
+  - RRHH/_shared/migradorDatos.js
+  - RRHH/EstructuraOrg/services/estructuraOrgService.js
+  - Todas las rutas en src/routes.js
+
+Lo que NO existe aún y se creará nuevo:
+  - RRHH/_shared/estadosColores.js
+  - RRHH/_shared/RrhhPageHeader.js
+  - RRHH/_shared/RrhhBadgeEstado.js
+  - RRHH/_shared/RrhhEmptyState.js
+  - RRHH/Empleados/index.js
+  - RRHH/Expedientes/index.js
+  - RRHH/Solicitudes/index.js
+
+
+================================================================================
+Paso 1 — Componentes _shared/
+================================================================================
+
+Archivo: RRHH/_shared/estadosColores.js (NUEVO)
+------------------------------------------------
+Mapa unificado de colores por estado. Cada módulo importa de aquí.
+
+COLOR_ESTADO = {
+  Activo: 'success',
+  Vacaciones: 'warning',
+  'Reposo médico': 'info',
+  Suspendido: 'danger',
+  Jubilado: 'secondary',
+  Baja: 'dark',
+  Pendiente: 'warning',
+  'En revisión': 'info',
+  Aprobada: 'success',
+  Rechazada: 'danger',
+  Completo: 'success',
+  Incompleto: 'danger',
+  vacante: 'warning',
+  ocupada: 'success',
+}
+
+
+Archivo: RRHH/_shared/RrhhPageHeader.js (NUEVO)
+------------------------------------------------
+Componente de header unificado. Reemplaza los 3 estilos inconsistentes actuales.
+
+Props: { icon, title, subtitle, badge, actions }
+Estructura visual:
+  - Icono en círculo bg-eco-soft a la izquierda
+  - title en text-montserrat fw-bold
+  - subtitle en text-minec-muted
+  - badge opcional (número en CBadge verde)
+  - actions slot derecho (botones Exportar, Nuevo, etc.)
+
+
+Archivo: RRHH/_shared/RrhhBadgeEstado.js (NUEVO)
+-------------------------------------------------
+Badge estandarizado para estados. Reemplaza los getEstadoColor() dispersos.
+
+Props: { estado } — busca automáticamente el color en estadosColores.js
+
+
+Archivo: RRHH/_shared/RrhhEmptyState.js (NUEVO)
+------------------------------------------------
+Estado vacío reutilizable.
+
+Props: { icon, title, message, actionLabel, onAction }
+
+
+================================================================================
+Paso 2 — listEmpleados.js (rehacer)
+================================================================================
+
+Archivo principal: src/views/RRHH/Empleados/listEmpleados.js
+Componentes a crear en Empleados/components/:
+
+  EmpleadosStats.js        → 4 KPI cards (Total, Activos, Vacaciones, Rendimiento)
+  EmpleadosFilters.js       → Barra búsqueda + selects + botón limpiar
+  EmpleadosTable.js         → Tabla con avatar, nombre, cargo, depto, estado, acciones
+  EmpleadosGrid.js          → Vista alternativa de tarjetas para móvil
+  EmpleadosEmptyState.js    → Estado vacío unificado
+  EmpleadosModalEditar.js   → Modal de edición con TODOS los campos del modelo
+  EmpleadosModalDetalle.js  → Modal de vista detallada del empleado
+
+Estructura de listEmpleados.js:
+  RrhhPageHeader
+  EmpleadosStats (4 cards)
+  CNav pills (Todos / Activos / Vacaciones / Suspendidos con CBadge counts)
+  EmpleadosFilters
+  Toggle tabla/cards
+  EmpleadosTable o EmpleadosGrid
+  CPagination
+  EmpleadosModalDetalle
+  EmpleadosModalEditar
+
+
+================================================================================
+Paso 3 — nuevoEmpleado.js (rehacer)
+================================================================================
+
+Archivo principal: src/views/RRHH/Empleados/nuevoEmpleado.js
+Componentes a crear en Empleados/components/WizardSteps/:
+
+  StepDatosPersonales.js    → Nombre, apellido, cédula, fecha nacimiento, género
+  StepContacto.js           → Correo, teléfono, dirección
+  StepLaboral.js            → Departamento, cargo, tipo contrato, salario, plaza
+  StepConfirmacion.js       → Resumen completo READONLY de los 3 pasos + confirmar
+
+Validaciones nuevas (agregar):
+  - Cédula: 7-8 dígitos numéricos
+  - Fecha nacimiento: edad >= 18 años
+  - Fecha ingreso: no puede ser futura
+  - Salario: > 0, formato numérico con step
+  - Correo: regex @ básico
+  - Teléfono: 11 dígitos (formato venezolano)
+  - Plaza: obligatoria, solo vacantes del departamento seleccionado
+
+
+================================================================================
+Paso 4 — perfilEmpleado.js (rehacer)
+================================================================================
+
+Archivo principal: src/views/RRHH/Empleados/perfilEmpleado.js
+Componentes a crear en Empleados/components/PerfilTabs/:
+
+  TabInfoPersonal.js   → Foto, nombre, cédula, correo, teléfono, dirección, skills
+  TabLaboral.js        → Cargo, departamento, salario, contrato, antigüedad
+  TabExpedientes.js    → Lista de expedientes del empleado + botón subir documento
+  TabSolicitudes.js    → Historial de solicitudes de este empleado
+  TabCuadrilla.js      → Info de cuadrilla asignada + link al módulo cuadrillas
+  TabEvaluaciones.js   → Rendimiento, última evaluación (placeholder futuro)
+
+Estructura de perfilEmpleado.js:
+  RrhhPageHeader (con foto del empleado)
+  CNav pills con los tabs
+  CTabContent con cada Tab*
+  Botón "Volver a lista"
+
+
+================================================================================
+Paso 5 — listSolicitudes.js (rehacer)
+================================================================================
+
+Archivo principal: src/views/RRHH/Solicitudes/listSolicitudes.js
+Componentes a crear en Solicitudes/components/:
+
+  SolicitudesStats.js       → 4 KPI cards (Total, Pendientes, Aprobadas, Rechazadas)
+  SolicitudesFilters.js     → Búsqueda + tipo + estado + fechas
+  SolicitudesTable.js       → Tabla con checkboxes, empleado, tipo, fechas, acciones
+  SolicitudesModalCrear.js  → Formulario completo: tipo, empleado, fechas, prioridad, adjuntos
+  SolicitudesModalDetalle.js→ Vista detallada con timeline de estados
+
+Bugs a eliminar:
+  - Botón "Editar" muerto (sin onClick)
+  - Case mismatch en comparaciones de tipo
+  - Paginación no se resetea al cambiar filtros
+  - Stats cards apretadas (6 → 4 cards con más espacio)
+
+
+================================================================================
+Paso 6 — Expedientes (rehacer orientación)
+================================================================================
+
+Archivos: listExpedientes.js (renombrado, antes Expedientes.js)
+Eliminar: nuevoExpediente.js standalone
+
+Cambio conceptual clave:
+  - El expediente pertenece OBLIGATORIAMENTE a un empleado
+  - La creación de expedientes se hace desde perfilEmpleado.js (TabExpedientes)
+  - La vista de lista agrupa por empleado
+
+Componentes a crear en Expedientes/components/:
+
+  ExpedientesStats.js       → KPIs (Total, Completos, En Revisión, Incompletos)
+  ExpedientesFilters.js     → Búsqueda + estado + empleado
+  ExpedientesTable.js       → Tabla agrupada por empleado, expand/collapse
+  ExpedientesModalUpload.js → Drag & drop de documentos (migrado de nuevoExpediente)
+  ExpedientesVisor.js       → Visor de PDF/imagen (migrado de verExpediente)
+
+Bugs a eliminar:
+  - CSS injection global en nuevoExpediente.js (mover a JSX <style>)
+  - <select> nativo (usar <CFormSelect>)
+  - variant="outline" inválido en CButton
+  - Botón "Exportar seleccionados" falso
+
+
+================================================================================
+Paso 7 — PanelRRHH.js (rehacer)
+================================================================================
+
+Archivo principal: src/views/RRHH/PanelRRHH.js
+Componentes a crear en PanelRRHH/components/:
+
+  PanelStats.js    → 4 KPI cards con datos reales de servicios
+  PanelChart.js    → Gráfico de línea con skeleton loading + selector de período
+  PanelProcesos.js → Tabla con datos REALES de solicitudService (reemplaza mock)
+
+Fuente de datos real (sin mock):
+  - Empleados activos → empleadoService.obtenerEstadisticas()
+  - Permisos pendientes → solicitudService.obtenerEstadisticas()
+  - Cuadrillas activas → cuadrillaService.obtenerCuadrillas()
+  - Tabla de procesos → solicitudService.obtenerSolicitudes() (últimas 10)
+
+
+================================================================================
+Paso 8 — EstructuraOrg.js (rehacer)
+================================================================================
+
+Archivo principal: src/views/RRHH/EstructuraOrg/EstructuraOrg.js
+Nuevo archivo: src/views/RRHH/EstructuraOrg/hooks/useEstructuraOrg.js
+Componentes a crear en EstructuraOrg/components/:
+
+  OrganigramaTree.js  → Vista jerárquica con líneas conectando nodos (CTreeView)
+  PlazasTable.js      → Tabla de plazas con filtros y acciones
+  PlazasModal.js      → Modal crear/editar plaza con validación visual
+  EstadisticasTab.js  → Stats de plazas + barras por departamento
+
+
+================================================================================
+Paso 9 — Actualizar _nav.js y routes.js
+================================================================================
+
+Si algún nombre de archivo cambió (ej: Expedientes.js → listExpedientes.js),
+actualizar las rutas lazy y los items del sidebar.
+
+
+================================================================================
+Resumen de lo que se ELIMINA
+================================================================================
+
+  listEmpleados.js (1122 líneas)     → Reemplazado por ~200 líneas + 7 componentes
+  nuevoEmpleado.js (855 líneas)      → Reemplazado por ~250 líneas + 4 wizard steps
+  perfilEmpleado.js (1320 líneas)    → Reemplazado por ~200 líneas + 6 tabs
+  Expedientes.js (1391 líneas)       → Renombrado a listExpedientes.js + 4 componentes
+  nuevoExpediente.js (307 líneas)    → ELIMINADO, fusionado en ExpedientesModalUpload.js
+  verExpediente.js (1304 líneas)     → ELIMINADO, fusionado en ExpedientesVisor.js
+  listSolicitudes.js (1234 líneas)   → Reemplazado por ~200 líneas + 4 componentes
+  PanelRRHH.js (1007 líneas)         → Reemplazado por ~150 líneas + 3 componentes
+  EstructuraOrg.js (724 líneas)      → Reemplazado por ~150 líneas + 4 componentes + 1 hook
+
+  getEstadoColor() en cada archivo   → UNIFICADO en RrhhBadgeEstado
+  3 estilos de header distintos      → UNIFICADO en RrhhPageHeader
+
+
+================================================================================
+Orden de Ejecución
+================================================================================
+
+Orden | Archivo(s)                              | Líneas nuevas | ¿Rompe algo?
+------|-----------------------------------------|:-------------:|:-----------:
+  1   | _shared/estadosColores.js               |      ~20      | No
+  2   | _shared/RrhhPageHeader.js               |      ~50      | No
+  3   | _shared/RrhhBadgeEstado.js              |      ~30      | No
+  4   | _shared/RrhhEmptyState.js               |      ~40      | No
+  5   | Empleados/listEmpleados.js + 7 comps    |     ~1000     | No, mismo nombre
+  6   | Empleados/nuevoEmpleado.js + 4 steps    |      ~700     | No, mismo nombre
+  7   | Empleados/perfilEmpleado.js + 6 tabs    |      ~800     | No, mismo nombre
+  8   | Expedientes/listExpedientes.js + 4 comp |      ~700     | Sí, renombrado
+  9   | Solicitudes/listSolicitudes.js + 4 comp |      ~700     | No, mismo nombre
+  10  | PanelRRHH/PanelRRHH.js + 3 comps        |      ~500     | No, mismo nombre
+  11  | EstructuraOrg.js + 1 hook + 4 comps     |      ~700     | No, mismo nombre
+  12  | _nav.js + routes.js (actualizar)        |      ~10      | Solo si cambian nombres
+
+TOTAL: ~5250 líneas nuevas escritas desde cero con patrón visual unificado.
+
+
+================================================================================
+Reglas de Oro del Refactor
+================================================================================
+
+1. NO tocar services, hooks ni constants. La capa de datos funciona.
+2. Cada componente nuevo debe usar las clases canónicas de GA (eco-card, etc.)
+3. Cada módulo debe tener su carpeta components/ con archivos pequeños (<200 líneas)
+4. Cada módulo debe tener index.js barrel export
+5. No usar inline styles para gradientes, colores o sombras — usar clases CSS
+6. No usar localStorage directo en componentes — solo via services
+7. No usar alert() ni confirm() — usar useToast() y useConfirmModal()
+8. No dejar código muerto (botones sin onClick, imports no usados)
+9. Todos los modales usan className="eco-modal" y size="lg"
+10. Todas las tablas usan className="table-minec" con header gradient eco
+
+================================================================================
+Fin del Plan
+================================================================================

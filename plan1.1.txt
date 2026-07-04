@@ -1,0 +1,464 @@
+================================================================================
+PLAN 1.1: ARQUITECTURA COMPLETA - ECOGEST + APP + ADMIN OFICINA
+================================================================================
+Fecha: 29 Abril 2026
+Proyecto: Solarctec 1.1
+Versión: COMPLETA (con contexto total de admin)
+
+================================================================================
+1. ARQUITECTURA OBJETIVO COMPLETA
+================================================================================
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  REACT NATIVE APP (Móvil)                                              │
+│  └─ SOLO DENUNCIAS (GPS, cámara, notificaciones, rápido)              │
+└──────────────────────────────────────────────────────────────────────────┘
+                         ↓ (API calls)
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ECOGEST WEB (Pública - REHECHA MODERNA con React)                    │
+│  ├─ DENUNCIAS (nivel idéntico a la app móvil)                       │
+│  ├─ PERMISOS (formal, completo)                                     │
+│  └─ LICENCIAS (formal, completo)                                    │
+│                                                                      │
+│  * Antes: HTML/Bootstrap estático → Ahora: React moderno (SPA)       │
+│  * Incluye denuncias al mismo nivel que la app                       │
+└──────────────────────────────────────────────────────────────────────────┘
+                         ↓ (API calls)
+┌──────────────────────────────────────────────────────────────────────────┐
+│  BACKEND NODE.JS/EXPRESS (API ÚNICA)                                 │
+│  └─ PostgreSQL/MongoDB                                                │
+│  └─ Sirve a TODOS los niveles (App + Ecogest + Admin)                │
+└──────────────────────────────────────────────────────────────────────────┘
+                         ↑ (API calls)
+┌──────────────────────────────────────────────────────────────────────────┐
+│  ADMIN COREUI (Backoffice - OFICINA COMPLETA)                         │
+│                                                                      │
+│  ══════════════════════════════════════════════════════════════════  │
+│  GESTIÓN PÚBLICA (Alimenta/Feed backend):                            │
+│  ├─ GestionDenuncias/  (de Ecogest + App)                           │
+│  ├─ GestionPermisos/    (de Ecogest)                                │
+│  └─ GestionLicencias/  (de Ecogest)                                 │
+│                                                                      │
+│  ══════════════════════════════════════════════════════════════════  │
+│  GESTIÓN INTERNA (Se AUTO-GESTIONA - Oficina completa):              │
+│  ├─ GestionAdministrativa/ (846 líneas AdminPanel.js)                 │
+│  │   ├─ Planificación/                                                │
+│  │   ├─ Inventario/                                                   │
+│  │   ├─ AdministracionFinanciera/                                     │
+│  │   ├─ Auditoria/                                                    │
+│  │   ├─ Documentacion/                                                │
+│  │   ├─ Servicios/                                                    │
+│  │   └─ cuadrillas/                                                   │
+│  ├─ RRHH/ (Recursos Humanos - CRÍTICO para auto-gestión)             │
+│  │   ├─ Empleados/                                                    │
+│  │   ├─ Solicitudes/                                                  │
+│  │   ├─ Vacaciones/                                                   │
+│  │   └─ Expedientes/                                                  │
+│  ├─ Reportes/                                                         │
+│  ├─ users/ (admin users - gestión de accesos)                         │
+│  ├─ dashboard/ (Dashboard principal)                                  │
+│  ├─ Inicio/                                                           │
+│  ├─ newviews/                                                         │
+│  └─ theme/ (colores, typography)                                      │
+│                                                                      │
+│  ══════════════════════════════════════════════════════════════════  │
+│  EL ADMIN ES UNA OFICINA COMPLETA:                                   │
+│  • Depende de sí misma para funcionar (RRHH gestiona empleados)      │
+│  • Financiera depende de empleados y cuadrillas                       │
+│  • Cuadrillas dependen de RRHH                                        │
+│  • Auditoria revisa todo el sistema                                   │
+│  • Reportes genera informes de todo                                   │
+└──────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+2. JUSTIFICACIÓN DE SEGURIDAD Y ARQUITECTURA
+================================================================================
+
+PROBLEMA:
+- Dar acceso a ciudadanos al Admin = VULNERABILIDAD CRÍTICA
+- El Admin contiene: RRHH, Financiera, Auditoría, cuadrillas, etc.
+- Usuarios externos NO pueden tocar NADA de eso
+
+SOLUCIÓN:
+- "Subir" formularios públicos (denuncias, permisos, licencias) a Ecogest
+- Ecogest Web = React moderno (no HTML estático)
+- App Móvil = Solo denuncias (lo más usado, rápido)
+- Admin = SOLO empleados (oficina completa que se auto-gestiona)
+
+FLUJO DE DATOS:
+App Móvil (denuncias) → Backend API ← Ecogest Web (denuncias+permisos+licencias)
+                              ↓
+                     Admin CoreUI (gestiona todo + se auto-gestiona)
+
+================================================================================
+3. TICKETS / TAREAS (CONTEXTO COMPLETO)
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FASE 1: BACKEND NODE.JS/EXPRESS (2-3 semanas)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TICKET #1: Configuración inicial del proyecto backend
+├── Crear carpeta /backend
+├── Inicializar package.json (npm init)
+├── Instalar dependencias: express, cors, helmet, dotenv, pg/mongoose
+├── Instalar dev: nodemon, jest, supertest
+├── Estructura de carpetas: /routes, /controllers, /models, /middlewares
+└── Configurar variables de entorno (.env)
+
+TICKET #2: Diseño de esquema de base de datos COMPLETO
+├── Reutilizar estructura de mockLicencias.js (253 líneas)
+├── Reutilizar estructura de denuncias (mock data)
+├── Tablas PÚBLICAS: denuncias, permisos, licencias
+├── Tablas ADMIN: empleados, cuadrillas, inventario, financiero
+├── Tablas GESTIÓN: usuarios_admin, roles, permisos_admin
+├── Relaciones: empleados → cuadrillas → denuncias_atendidas
+└── Usar validaciones de validation.js (365 líneas) como referencia
+
+TICKET #3: API REST - Endpoints de Denuncias
+├── POST   /api/denuncias           → Crear (app + web Ecogest)
+├── GET    /api/denuncias/:codigo   → Consulta pública (sin auth)
+├── PATCH  /api/denuncias/:id       → Actualizar estado (admin)
+├── GET    /api/denuncias           → Listar con filtros (admin)
+├── DELETE /api/denuncias/:id       → Eliminar (admin)
+└── Reutilizar generarIdDenuncia() de denunciasUtils.js
+
+TICKET #4: API REST - Endpoints de Permisos
+├── POST   /api/permisos            → Crear (solo web Ecogest)
+├── GET    /api/permisos/:codigo    → Consulta pública
+├── PATCH  /api/permisos/:id        → Actualizar (admin)
+├── GET    /api/permisos           → Listar (admin)
+└── Endpoints para documentos (upload)
+
+TICKET #5: API REST - Endpoints de Licencias
+├── POST   /api/licencias           → Crear (solo web Ecogest)
+├── GET    /api/licencias/:codigo   → Consulta pública
+├── PATCH  /api/licencias/:id       → Actualizar (admin)
+├── GET    /api/licencias          → Listar (admin)
+└── Reutilizar estructura de mockLicencias.js
+
+TICKET #6: API REST - Endpoints de Gestión Admin (Para auto-gestión)
+├── POST   /api/admin/empleados           → RRHH (crear empleado)
+├── GET    /api/admin/empleados/:id      → Perfil empleado
+├── PATCH  /api/admin/empleados/:id      → Actualizar empleado
+├── POST   /api/admin/cuadrillas         → Crear cuadrilla
+├── GET    /api/admin/cuadrillas         → Listar cuadrillas
+├── POST   /api/admin/financiero         → Registros financieros
+├── GET    /api/admin/auditoria          → Logs de auditoría
+└── GET    /api/admin/reportes          → Generar reportes
+
+TICKET #7: Autenticación y seguridad COMPLETA
+├── JWT para admin (CoreUI) - roles: superadmin, admin, operador
+├── API Key para Ecogest web (pública)
+├── Diferenciación: App móvil usa API Key + device ID
+├── Rate limiting (express-rate-limit) por origen
+├── Validación de entrada server-side (reutilizar validation.js)
+├── CORS configurado por origen (Ecogest, App, Admin)
+└── Helmet.js para headers de seguridad
+
+TICKET #8: Subida de archivos (multi-propósito)
+├── Multer para archivos
+├── Validar tipos (ALLOWED_FILE_TYPES de validation.js)
+├── Límite 10MB, máximo 5 archivos (público)
+├── Límite mayor para admin (documentos internos)
+├── Almacenamiento: local temp → S3 o servidor propio
+└── Endpoints: /api/upload/denuncias, /api/upload/admin/docs
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FASE 2: ECOGEST WEB REHECHA MODERNA (2-3 semanas)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TICKET #9: Migrar Ecogest de HTML estático a React SPA moderna
+├── Crear proyecto: npm create vite@latest ecogest-web -- --template react
+├── Instalar: react-router-dom, axios, react-leaflet (mapas)
+├── Instalar: bootstrap (para mantener identidad visual) o Tailwind
+├── Estructura: /ecogest-web/src/
+│   ├── /components (Header, Footer, Forms)
+│   ├── /pages (Home, Tramites, Denuncias, Permisos, Licencias)
+│   ├── /services (API calls centralizados)
+│   └── /utils (validaciones adaptadas de validation.js)
+└── NO es solo "mejorar" el HTML → ES REHACER COMPLETO
+
+TICKET #10: Página de Inicio moderna (Equivalente a index.html)
+├── Hero section con estadísticas (conectar a API)
+├── Servicios destacados (cards interactivas)
+├── Sobre nosotros (MINEC)
+├── Animaciones (Framer Motion o React Spring)
+└── Responsive design (mobile-first)
+
+TICKET #11: Módulo Denuncias (NIVEL IDÉNTICO A LA APP MÓVIL)
+├── Formulario con mapa interactivo (react-leaflet)
+├── Geolocalización automática (navigator.geolocation)
+├── Subida de fotos múltiples (drag & drop)
+├── Selector de tipos (deforestación, contaminación, etc.)
+├── Generar código: DEN-YYMM-00001
+├── Feedback visual inmediato (código generado)
+└── Consulta de estado por código + documento
+
+TICKET #12: Módulo Permisos (Formal, completo)
+├── Formulario multi-paso (stepper)
+├── Validación RIF (reutilizar validateRIF de validation.js)
+├── Subida de documentos (plan de gestión, certificados)
+├── Selector de tipo: emisiones, descargas, residuos, ruido
+├── Resumen antes de enviar
+├── Generar código: PERM-YYMM-00001
+└── Consulta de estado pública
+
+TICKET #13: Módulo Licencias (Formal, completo)
+├── Formulario según tipo (forestal, agua, emisiones, residuos)
+├── Reutilizar componentes de licencias de CoreUI (src/views/usuarios/)
+├── Calculadora de impacto ambiental (si aplica)
+├── Requisitos dinámicos según tipo
+├── Generar código: LIC-YYMM-00001
+└── Consulta de estado pública
+
+TICKET #14: Consulta pública unificada
+├── Página /consulta (o sección en tramites)
+├── Input: código + documento/RIF
+├── Detecta automáticamente si es DEN/PERM/LIC
+├── Muestra: estado, fecha, historial de eventos
+└── Sin necesidad de login (pública)
+
+TICKET #15: Adaptar validaciones de validation.js a ES modules
+├── validateText() → función exportable
+├── validateEmail() → función exportable
+├── validateRIF() → función exportable
+├── validateCoordinates() → función exportable
+├── validateFiles() → función exportable
+└── Mantener misma lógica de src/views/usuarios/_shared/validation.js
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FASE 3: APP REACT NATIVE - SOLO DENUNCIAS (3-4 semanas)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TICKET #16: Configuración inicial React Native
+├── npx react-native init EcogestApp
+├── Instalar: @react-navigation/native, @react-navigation/stack
+├── Instalar: axios (HTTP), react-native-maps (mapas)
+├── Instalar: react-native-image-picker (cámara)
+├── Instalar: @react-native-community/geolocation (GPS)
+├── Instalar: react-native-push-notification (notificaciones)
+└── Instalar: react-native-async-storage (offline)
+
+TICKET #17: Pantalla de nueva denuncia (Experiencia móvil superior)
+├── Selector de tipo (deforestación, contaminación, etc.)
+├── Título y descripción (con validateText adaptado)
+├── Cámara nativa: múltiples fotos (react-native-image-picker)
+├── GPS automático: obtener coordenadas precisas
+├── Mapa interactivo: fijar ubicación (react-native-maps)
+├── Validar dentro de Venezuela (validateVenezuelaCoordinates)
+└── Botón de enviar con feedback haptic
+
+TICKET #18: Enviar denuncia al backend
+├── POST /api/denuncias con FormData (fotos + JSON)
+├── Recibir código generado (DEN-2404-00001)
+├── Mostrar confirmación con código y copiar al portapapeles
+├── Guardar localmente el historial de denuncias del dispositivo
+└── Validar con misma lógica de validation.js
+
+TICKET #19: Consulta de estado de denuncia (Sin login)
+├── Input: código + documento (o número de ID)
+├── GET /api/denuncias/:codigo
+├── Mostrar: estado, fecha, historial de eventos
+├── Pull-to-refresh para actualizar estado
+└── Compartir estado vía WhatsApp/mensajería
+
+TICKET #20: Notificaciones push (Cambios de estado)
+├── Configurar Firebase Cloud Messaging (FCM)
+├── Suscribir dispositivo al topic: denuncia_{codigo}
+├── Recibir notificaciones en cambios: pendiente → investigando → resuelta
+├── Manejar taps en notificaciones (abrir detalle)
+└── Mostrar badge en icono de app
+
+TICKET #21: Modo offline + sincronización
+├── AsyncStorage para borradores de denuncias
+├── Cola de envío cuando no hay internet (Background Sync)
+├── Sincronización automática al recuperar conexión
+├── Indicador visual de estado de conexión
+└── Reintentos automáticos con backoff exponencial
+
+TICKET #22: UI/UX optimizada para móvil
+├── Bottom tab navigation (Inicio, Nueva Denuncia, Mis Denuncias)
+├── Animaciones fluidas (React Native Reanimated)
+├── Modo oscuro/claro (opcional)
+├── Accesibilidad (VoiceOver/TalkBack)
+└── Splash screen y icono de app personalizados
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FASE 4: CONECTAR ADMIN COREUI COMPLETO (2-3 semanas)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TICKET #23: Conectar GestionDenuncias/ al backend
+├── Reemplazar MOCK_DATA con fetch/axios real
+├── GET /api/denuncias con filtros (admin)
+├── PATCH /api/denuncias/:id (cambiar estado)
+├── Usar mapa de calor de GestionDenuncias/components/mapaCalor.js
+├── DashBoard estadísticas (dashBoardEstadisticas.js)
+└── Mantener filtros avanzados (filtrosAvanzados.js)
+
+TICKET #24: Conectar GestionPermisos/ al backend
+├── Reemplazar useState con llamadas API reales
+├── GET /api/permisos (admin)
+├── PATCH /api/permisos/:id
+├── Panel de gestión (panelGestionPermisos.js)
+├── Lista de permisos (listaGestionPermisos.js)
+└── Detalles modales (detallePermisosModal.js)
+
+TICKET #25: Conectar GestionLicencias/ al backend
+├── Reemplazar MOCK data con API real
+├── GET /api/licencias (admin)
+├── PATCH /api/licencias/:id
+├── Reutilizar utils de GestionLicencias/utils/licenciasUtils.js
+└── Dashboard de estadísticas
+
+TICKET #26: Conectar RRHH/ (CRÍTICO para auto-gestión del admin)
+├── Listar empleados: GET /api/admin/empleados
+├── Nuevo empleado: POST /api/admin/empleados
+├── Perfil empleado: GET /api/admin/empleados/:id
+├── Solicitudes de empleados: GET/POST /api/admin/solicitudes
+├── Vacaciones: GET/POST /api/admin/vacaciones
+├── Expedientes: GET/POST /api/admin/expedientes
+└── El admin NECESITA RRHH para gestionarse a sí mismo
+
+TICKET #27: Conectar GestionAdministrativa/ COMPLETA
+├── AdminPanel.js (846 líneas) → Conectar a API
+├── Planificación: GET/POST /api/admin/planificacion
+├── Inventario: GET/POST /api/admin/inventario
+├── Cuadrillas: conectar useCuadrillas.js al backend
+├── Financiera: GET/POST /api/admin/financiero
+├── Auditoría: GET /api/admin/auditoria (logs)
+└── Servicios: GET/POST /api/admin/servicios
+
+TICKET #28: Autenticación en CoreUI Admin
+├── Login con JWT: POST /api/auth/login
+├── Almacenar token en Redux/localStorage
+├── Interceptor de Axios para inyectar token automáticamente
+├── Protected routes en React Router (src/routes.js)
+├── Roles y permisos (superadmin, admin, operador)
+└── users/ (admin users) → Gestión de accesos
+
+TICKET #29: Dashboard unificado (AdminPanel.js)
+├── KPIs de los 3 módulos públicos (denuncias, permisos, licencias)
+├── Gráficos con Chart.js (@coreui/chartjs ya instalado)
+├── Próximos vencimientos de licencias
+├── Denuncias recientes y críticas
+├── Estadísticas financieras (si aplica)
+└── Actividad reciente de empleados
+
+TICKET #30: Reportes/ (Generación de informes)
+├── GET /api/admin/reportes?tipo=denuncias&fecha=...
+├── Generar PDFs (jsPDF ya instalado en CoreUI)
+├── Exportar a Excel/CSV
+├── Reportes de: denuncias, permisos, licencias, empleados, financiero
+└── Agendar reportes automáticos (email)
+
+================================================================================
+4. ORDEN SUGERIDO DE EJECUCIÓN (SPRINTS)
+================================================================================
+
+SPRINT 1 (Semanas 1-3): Backend base + API pública
+  → Tickets #1, #2, #3, #4, #5, #7 (parcial)
+
+SPRINT 2 (Semanas 3-5): Backend admin + Auth
+  → Tickets #6 (completo), #8, #7 (completo)
+
+SPRINT 3 (Semanas 5-8): Ecogest Web React (DENUNCIAS + PERMISOS + LICENCIAS)
+  → Tickets #9, #10, #11, #12, #13, #14, #15
+
+SPRINT 4 (Semanas 8-12): App React Native (SOLO DENUNCIAS)
+  → Tickets #16, #17, #18, #19, #20, #21, #22
+
+SPRINT 5 (Semanas 12-15): Admin CoreUI COMPLETO (Auto-gestión)
+  → Tickets #23, #24, #25, #26, #27, #28, #29, #30
+
+SPRINT 6 (Semanas 15-16): Pruebas, Pulido y Despliegue
+  → Pruebas E2E, pruebas de carga, documentación API
+  → Despliegue: Backend (Railway/Render), Web (Vercel/Netlify)
+  → App: Google Play Store + App Store
+  → Admin: VPS o servidor propio
+
+================================================================================
+5. TIEMPO TOTAL ESTIMADO
+================================================================================
+
+Fase 1 (Backend COMPLETO):        2-3 semanas
+Fase 2 (Ecogest Web React):        2-3 semanas
+Fase 3 (App Móvil Denuncias):      3-4 semanas
+Fase 4 (Admin CoreUI COMPLETO):     2-3 semanas
+Fase 5 (Pruebas y Despliegue):     1-2 semanas
+───────────────────────────────────────────────
+TIEMPO TOTAL:                      10-15 semanas (1 desarrollador)
+                                 ó 6-8 semanas (2 desarrolladores)
+
+================================================================================
+6. RECURSOS REUTILIZABLES DE COREUI (CONTEXTO COMPLETO)
+================================================================================
+
+✓ src/views/usuarios/_shared/validation.js (365 líneas)
+  → Lógica de validación para TODOS los formularios (públicos y admin)
+
+✓ src/views/usuarios/denuncias/utils/denunciasUtils.js (74 líneas)
+  → generarIdDenuncia(), calcularEstadisticas(), filtrarDenuncias()
+
+✓ src/views/usuarios/licencias/data/mockLicencias.js (253 líneas)
+  → Esquema de BD para licencias + historial + documentos
+
+✓ src/views/usuarios/_shared/constants.js (48 líneas)
+  → ESTADOS_VENEZUELA, FILE_CONFIG, FIELD_LIMITS
+
+✓ src/views/GestionAdministrativa/AdminPanel.js (846 líneas)
+  → Panel principal admin, conectar a API en Ticket #27
+
+✓ src/views/GestionAdministrativa/GestionDenuncias/
+  → Mapa de calor (mapaCalor.js), estadísticas, filtros avanzados
+
+✓ src/views/GestionAdministrativa/cuadrillas/hooks/useCuadrillas.js
+  → Lógica de cuadrillas, conectar a backend
+
+✓ src/views/RRHH/ (Empleados, Solicitudes, Vacaciones, Expedientes)
+  → CRÍTICO para auto-gestión del admin (Ticket #26)
+
+✓ @coreui/react, @coreui/chartjs, react-redux (ya instalados)
+  → Mantener en Admin, reutilizar componentes para Ecogest si aplica
+
+================================================================================
+7. PUNTOS CRÍTICOS A RECORDAR
+================================================================================
+
+1. Ecogest NO es solo "mejorar HTML" → SE REHACE EN REACT MODERNO
+2. Ecogest incluye DENUNCIAS al mismo nivel que la app móvil
+3. Admin es UNA OFICINA COMPLETA que se AUTO-GESTIONA (RRHH es clave)
+4. Backend es ÚNICO y sirve a TODOS los niveles
+5. App móvil = SOLO DENUNCIAS (lo más rápido y usado)
+6. Seguridad: Ciudadanos NUNCA tocan el Admin (RRHH, Financiera, etc.)
+7. Flujo: App + Ecogest → Backend ← Admin (gestiona y se auto-gestiona)
+
+================================================================================
+8. ESQUEMA DE DESPLIEGUE SUGERIDO
+================================================================================
+
+┌────────────────────────────────────────────────────────────────┐
+│  PRODUCCIÓN:                                                 │
+│  Backend:  Railway / Render / DigitalOcean Droplet              │
+│  Database:  Supabase (PostgreSQL) o servidor propio          │
+│  Ecogest:  Vercel / Netlify (React SPA)                      │
+│  Admin:    Mismo servidor que backend (VPS)                   │
+│  App:      Google Play Store + Apple App Store                │
+└────────────────────────────────────────────────────────────────┘
+
+DESARROLLO:
+├── /backend (Node.js/Express)
+├── /ecogest-web (React Vite - Público)
+├── /ecogest-app (React Native - Móvil)
+└── / (Solarctec.1.1 existente - Admin CoreUI)
+
+================================================================================
+FIN DEL DOCUMENTO - PLAN 1.1 COMPLETO
+================================================================================
+
+NOTAS FINALES:
+- Este plan incluye TODO el contexto de admin (GestionAdministrativa, RRHH, etc.)
+- Los primeros 22 tickets del plan anterior se mantienen pero con contexto correcto
+- Se agregaron 8 tickets nuevos (23-30) para la parte admin COMPLETA
+- El tiempo estimado subió a 10-15 semanas por la magnitud del admin
+- Se puede paralelizar si hay 2 desarrolladores

@@ -1,0 +1,85 @@
+# ESTUDIO DE ERRORES Y FALLAS - SOLARCTEC
+
+**Fecha de análisis:** 05/05/2026
+**Carpeta analizada:** src/
+
+---
+
+## RESUMEN EJECUTIVO
+
+| Categoría | Cantidad | Severidad |
+|-----------|----------|----------|
+| console.log/error/warn | 114 | Media |
+| alert() nativos | 108 | Alta |
+| TODO pendientes | 2 | Baja |
+| Hooks sin usar | Múltiples | Media |
+| Warnings build | Por verificar | - |
+
+---
+
+## 1. USO EXCESIVO DE alert() (108 casos)
+
+**Problema:** El proyecto tiene un hook `useToast()` personalizado en `src/views/usuarios/_shared/useToast.js` pero no se usa consistently.
+
+**Archivos afectados:**
+- `Planificacion.js` (20+ alerts)
+- `Inventario.js` (6 alerts)
+- `verExpediente.js` (3 alerts)
+- `perfilEmpleado.js` (5 alerts)
+- `GestionDenuncias` (múltiples)
+- `GestionPermisos` (múltiples)
+- `GestionLicencias` (múltiples)
+- `cuadrillas.js` (7 alerts)
+
+**Impacto:** UX inconsistente, блокирует UI, no permite copy/paste
+
+---
+
+## 2. CONSOLAS DEBUG (114 statements)
+
+**Problema:** Consolas de debug left en producción.
+
+**Mayor impacto:**
+- `Planificacion.js` (line 725): `console.log` en función de exportación
+- `useGestionDenuncias.js` (15+ console.logs)
+- `useMapCalor.js`, `useEstadisticas.js`
+
+---
+
+## 3. ERROR HANDLING
+
+**Archivos con posibles issues:**
+- `useLicencias.js`: Multiples console.error sin toast
+- `cuadrillaServices.js`: 6 console.error
+- `permisosService.js`: 7 console.error
+
+---
+
+## 4. TO-DOS PENDIENTES
+
+- `perfilUsers.js:93` - PATCH /api/usuarios/:id
+- `perfilUsers.js:117` - POST /api/auth/change-password
+
+---
+
+## 5. POSIBLES MEJORAS IDENTIFICADAS
+
+### Performance
+-many lazy-loaded routes ya implementadas correctamente
+- Hooks personalizados ya existent para datos
+
+### Código
+- Inconsistencia en naming: `Hooks/` vs `hooks/`
+- Algunos archivos con nombres duplicados (useForm en licencias y denuncias)
+
+---
+
+## RECOMENDACIONES PRIORITARIAS
+
+1. **FASE 1 (Fácil):** Reemplazar `alert()` por `useToast()`
+2. **FASE 2 (Medio):** Limpiar console.logs de debug
+3. **FASE 3 (Avanzado):** Implementar API real vs mock data
+
+---
+
+*Generado automáticamente por análisis de código*

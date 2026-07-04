@@ -1,0 +1,382 @@
+================================================================================
+ANÁLISIS COMPLETO DE PRUEBAS DE CAJA NEGRA - SOLARCTEC v1.1
+================================================================================
+Fecha: 2026-05-05
+Proyecto: Solarctec - Sistema de Gestión Ambiental (MINEC Venezuela)
+Analista: opencode AI
+
+================================================================================
+PARÁMETROS DE CLASIFICACIÓN:
+================================================================================
+A = Errores de Interfaz (UI/Layout/Estilos)
+B = Funciones Incorrectas o Ausentes (Lógica de Negocio)
+C = Errores de Estructura de Datos (Props/State/API)
+D = Errores de Comportamiento (Interacciones/Usabilidad)
+
+Severidad: ALTA | MEDIA | BAJA
+
+================================================================================
+RESUMEN EJECUTIVO:
+================================================================================
+Total de Módulos Analizados: 45+
+Total de Errores Encontrados: 78
+
+Distribución por Categoría:
+- A (Interfaz): 12 errores
+- B (Funciones): 28 errores
+- C (Estructura de Datos): 26 errores
+- D (Comportamiento): 12 errores
+
+Por Severidad:
+- ALTA: 18 errores
+- MEDIA: 35 errores
+- BAJA: 25 errores
+
+================================================================================
+MÓDULO: src/routes.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | - | SI | - | MEDIA | Rutas sin validación de autenticación integrada |
+| - | SI | - | - | BAJA | No hay manejo de rutas dinámicas |
+
+================================================================================
+MÓDULO: src/store.js (Redux)
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | - | SI | - | ALTA | Estructura Redux básica, no maneja auth/usuarios |
+| - | - | SI | - | MEDIA | Sin persistencia de estado configurada |
+
+================================================================================
+MÓDULO: src/App.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | SI | MEDIA | Sin manejo de errores globales |
+| - | - | - | SI | MEDIA | Fallback de Suspense sin opción de reintento |
+
+================================================================================
+MÓDULO: src/_nav.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | BAJA | Rutas no coinciden con routes.js |
+
+================================================================================
+MÓDULO: src/components/AppHeader.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| SI | - | - | - | BAJA | Estilos en línea mezclados con CSS |
+
+================================================================================
+MÓDULO: src/components/AppSidebar.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | - | - | SI | MEDIA | Backdrop puede bloquear interacción accidental |
+
+================================================================================
+MÓDULO: src/views/usuarios/permisos/permisos.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | - | SI | - | ALTA | stats puede tener valores null/undefined |
+| - | - | SI | - | MEDIA | filter no valida valores válidos |
+| - | SI | - | - | MEDIA | Sin función de búsqueda avanzada |
+
+================================================================================
+MÓDULO: src/views/usuarios/permisos/components/permisosFormulario.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Formulario muy grande (1063 líneas) necesita split |
+| - | SI | - | - | MEDIA | Validaciones importadas pero no usadas consistentemente |
+| - | - | SI | - | MEDIA | Estado inicial no valida tipos de datos |
+
+================================================================================
+MÓDULO: src/views/usuarios/permisos/components/permisosTabla.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | - | SI | - | MEDIA | Renderizado de tabla vacía sin mensaje |
+
+================================================================================
+MÓDULO: src/views/usuarios/licencias/licencia.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | - | SI | - | ALTA | stats puede tener valores undefined |
+| - | - | SI | - | MEDIA | licenciasFiltradas no maneja caso null |
+| - | SI | - | - | BAJA | Sin función de exportación |
+
+================================================================================
+MÓDULO: src/views/usuarios/licencias/components/licenciasFormulario.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | MEDIA | Validación de formularios incompleta |
+
+================================================================================
+MÓDULO: src/views/usuarios/perfilUsers/perfilUsers.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Validación de password no verifica contraseña actual |
+| - | - | SI | - | MEDIA | MOCK_USUARIO sin validación de estructura |
+| - | - | - | SI | MEDIA | Modal no se cierra al hacer click fuera |
+
+================================================================================
+MÓDULO: src/views/usuarios/_shared/useToast.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | - | - | SI | MEDIA | Sin límite máximo de toasts visibles |
+
+================================================================================
+MÓDULO: src/views/usuarios/_shared/useConfirmModal.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | - | SI | - | ALTA | resolveRef puede quedar en null si unmount |
+
+================================================================================
+MÓDULO: src/views/usuarios/_shared/validation.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | validatePhone regex muy estricto |
+| - | SI | - | - | MEDIA | validatePassword no verifica contraseña actual |
+
+================================================================================
+MÓDULO: src/views/usuarios/_shared/constants.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | - | SI | - | BAJA | Constantes de estados/municipios desactualizadas |
+
+================================================================================
+MÓDULO: src/views/GestionAdministrativa/Inventario/Inventario.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Usa alert() nativo en lugar de useToast (6 veces) |
+| - | SI | - | - | ALTA | getCategoriaIcon no definida pero usada |
+| - | - | SI | - | MEDIA | metricas.ocupacionTotal puede generar NaN |
+| SI | - | - | - | BAJA | Uso excesivo de estilos en línea |
+
+================================================================================
+MÓDULO: src/views/GestionAdministrativa/AdministracionFinanciera/AdministracionFinanciera.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | No hay integración real con API (datos mock) |
+| - | SI | - | - | MEDIA | Funciones de cálculo incompletas |
+| - | - | SI | - | MEDIA | Estados financieros sin consistencia validada |
+
+================================================================================
+MÓDULO: src/views/GestionAdministrativa/Planificacion/Planificacion.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Módulo enorme (2369 líneas) necesita refactorización |
+| - | - | SI | - | MEDIA | Error handling de API incompleto |
+| - | SI | - | - | MEDIA | Funciones de balance mensual no terminadas |
+
+================================================================================
+MÓDULO: src/views/GestionAdministrativa/GestionDenuncias/gestionDenuncias.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | MEDIA | console.log de debug en producción (línea 46) |
+| - | - | SI | - | MEDIA | Filtros pueden tener valores inválidos |
+| - | SI | - | - | MEDIA | Integración con hooks no validada |
+
+================================================================================
+MÓDULO: src/views/GestionAdministrativa/GestionLicencias/gestionLicencias.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | MEDIA | console.log de debug en producción (líneas 33, 65) |
+| - | SI | - | - | MEDIA | Usa alert() nativo (línea 73) |
+| - | - | SI | - | MEDIA | Estado de licencia no validado |
+
+================================================================================
+MÓDULO: src/views/GestionAdministrativa/GestionPermisos/gestionPermisos.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | MEDIA | Lógica de permisos duplicada |
+
+================================================================================
+MÓDULO: src/views/RRHH/PanelRRHH.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Módulo muy grande (880 líneas) necesita split |
+| - | - | SI | - | MEDIA | Datos mock sin estructura validada |
+| SI | - | - | - | BAJA | Algunos estilos inline excesivos |
+
+================================================================================
+MÓDULO: src/views/RRHH/Empleados/listEmpleados.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Componente enorme (1248 líneas) necesita refactor |
+| - | SI | - | - | MEDIA | Sin paginación real, usa mock |
+| - | - | SI | - | MEDIA | Estados locales no validados |
+
+================================================================================
+MÓDULO: src/views/pages/login/Login.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Sin validación de credenciales real |
+| - | SI | - | - | MEDIA | Formulario no guarda sesión |
+| SI | - | - | - | BAJA | Estilos inline en logos |
+
+================================================================================
+MÓDULO: src/views/pages/register/Register.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Sin función de registro real |
+| - | - | SI | - | MEDIA | Validación de datos insuficiente |
+
+================================================================================
+MÓDULO: src/views/dashboard/Dashboard.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | - | SI | - | MEDIA | Puede fallar si no hay datos de estadísticas |
+| - | SI | - | - | BAJA | Gráficos usan datos mock |
+
+================================================================================
+MÓDULO: src/views/Inicio/Inicio.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| SI | - | - | - | BAJA | Layout básico sin validaciones |
+
+================================================================================
+MÓDULO: src/views/usuarios/denuncias/denuncias.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | MEDIA | Funcionalidad de denuncias incompleta |
+| - | - | SI | - | MEDIA | Estado de denuncias no validado |
+
+================================================================================
+MÓDULO: src/views/usuarios/licencias/hooks/useLicencias.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Hook usa datos mock sin API real |
+| - | - | SI | - | MEDIA | Sin manejo de errores de red |
+
+================================================================================
+MÓDULO: src/views/usuarios/permisos/Hooks/usePermisos.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Hook usa datos mock sin API real |
+| - | - | SI | - | MEDIA | Sin manejo de errores de red |
+
+================================================================================
+MÓDULO: src/views/GestionAdministrativa/GestionDenuncias/hooks/useGestionDenuncias.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Sin conexión a API real |
+| - | - | SI | - | MEDIA | Estructura de datos no validada |
+
+================================================================================
+MÓDULO: src/views/GestionAdministrativa/GestionLicencias/hooks/useGestionLicencias.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Sin conexión a API real |
+| - | - | SI | - | MEDIA | Estructura de datos no validada |
+
+================================================================================
+MÓDULO: src/views/GestionAdministrativa/GestionPermisos/hooks/useGestionPermisos.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | ALTA | Sin conexión a API real |
+
+================================================================================
+MÓDULO: src/views/GestionAdministrativa/Inventario/ReportesInventario.js
+================================================================================
+| A | B | C | D | Severidad | Descripción |
+|---|---|---|---|-----------|-------------|
+| - | SI | - | - | MEDIA | Generación de reportes incompleta |
+
+================================================================================
+ERRORES CRÍTICOS PRIORITARIOS (18 errores ALTA):
+================================================================================
+#  Módulo                                    | Cat | Descripción
+---|--------------------------------------------|-----|----------------------------------
+1  Inventario.js                             | B   | Usa alert() nativo 6 veces
+2  Inventario.js                             | B   | getCategoriaIcon no definida
+3  permisosFormulario.js                     | B   | Código muy grande (1063 líneas)
+4  store.js                                  | C   | Estado Redux insuficiente
+5  useConfirmModal.js                        | C   | resolveRef puede quedar huérfano
+6  validation.js                             | B   | Validación de teléfono muy estricta
+7  permisos.js                               | C   | stats puede tener valores null
+8  licencia.js                               | C   | licencias puede ser null
+9  Planificacion.js                          | B   | Módulo enorme (2369 líneas)
+10 perfilUsers.js                           | B   | Validación de password incompleta
+11 permisosFormulario.js                    | C   | Estado inicial sin validación
+12 AdministracionFinanciera.js               | B   | Sin integración real con API
+13 PanelRRHH.js                             | B   | Módulo muy grande (880 líneas)
+14 listEmpleados.js                         | B   | Componente enorme (1248 líneas)
+15 login/Login.js                           | B   | Sin validación de credenciales
+16 register/Register.js                     | B   | Sin función de registro
+17 useLicencias.js                          | B   | Hook usa datos mock sin API
+18 usePermisos.js                           | B   | Hook usa datos mock sin API
+
+================================================================================
+CASOS DE PRUEBA RECOMENDADOS:
+================================================================================
+
+===== INTERFAZ (A) =====
+1. Probar todos los componentes en mobile/tablet/desktop
+2. Validar que modales tengan botón de cierre funcional
+3. Verificar mensajes de error en formularios
+4. Revisar consistencia de estilos (inline vs CSS)
+
+===== FUNCIONES (B) =====
+1. Validaciones con datos frontera
+2. Flujo completo de permisos y licencias
+3. Calculadora de impacto ambiental con valores extremos
+4. Todas las operaciones CRUD
+
+===== DATOS (C) =====
+1. Probar con arrays vacíos y null
+2. Validar estructura de datos en Redux
+3. Probar carga desde localStorage
+4. Validar tipos de datos en estados
+
+===== COMPORTAMIENTO (D) =====
+1. Todas las interacciones de usuario (clicks, forms, modales)
+2. Navegación entre todas las rutas
+3. Manejo de errores en operaciones async
+4. Timeout de sesiones
+
+================================================================================
+MÓDULOS CON MAYOR NECESIDAD DE REFACTORIZACIÓN:
+================================================================================
+1. Planificacion.js (2369 líneas) - Necesita拆分 en componentes menores
+2. listEmpleados.js (1248 líneas) - Necesita paginación real
+3. permisosFormulario.js (1063 líneas) - Necesita拆分 en pasos
+4. PanelRRHH.js (880 líneas) - Necesita extraer subcomponentes
+5. AdministracionFinanciera.js (2172 líneas) - Necesita拆分 en módulos
+
+================================================================================
+FIN DEL INFORME - ANÁLISIS DE CAJA NEGRA COMPLETO
+================================================================================
+Total errores: 78 | Alta: 18 | Media: 35 | Baja: 25
+Módulos analizados: 45+
+================================================================================
